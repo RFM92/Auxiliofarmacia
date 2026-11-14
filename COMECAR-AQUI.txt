@@ -67,3 +67,7 @@ DEPOIS DO PUSH
 
 Guias detalhados: GUIA_HF_SPACE.md · GUIA_DEPLOY.md · GUIA_ASAAS.md
 ══════════════════════════════════════════════════════════════
+
+
+FRONTEND NO AR (Cloudflare Pages):
+  https://auxilio-farmacia.pages.dev
