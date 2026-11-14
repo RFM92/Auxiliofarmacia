@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contato - Auxílio Farmácia</title>
+<meta name="description" content="Entre em contato com o Auxílio Farmácia - suporte, vendas, parcerias">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  header {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: white;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 32px; margin-bottom: 8px; }
+  header p { opacity: 0.9; }
+  .breadcrumb { padding: 16px 0; font-size: 14px; color: #64748b; }
+  .breadcrumb a { color: #0f766e; text-decoration: none; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 24px 0;
+  }
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .info-box {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .info-box h3 { color: #0f766e; margin-bottom: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .submit-btn {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3); }
+  .contact-item {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .contact-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .contact-content strong { display: block; color: #1e293b; }
+  .contact-content small { color: #64748b; }
+  .back-link {
+    display: inline-block;
+    background: #0f766e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin: 24px 0;
+    font-weight: 600;
+  }
+  .back-link:hover { background: #0d9488; }
+</style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<header>
+  <h1>📧 Fale Conosco</h1>
+  <p>Tire dúvidas, dê sugestões ou solicite parcerias</p>
+</header>
+
+<div class="container" id="conteudo-principal">
+  <p class="breadcrumb">
+    <a href="index.html">← Voltar ao início</a>
+  </p>
+
+  <div class="grid">
+
+    <div>
+      <div class="info-box">
+        <h3>📞 Canais de Contato</h3>
+
+        <div class="contact-item">
+          <div class="contact-icon">📧</div>
+          <div class="contact-content">
+            <strong>Suporte Técnico</strong>
+            <small>suporte@auxfarmacia.com.br</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">💼</div>
+          <div class="contact-content">
+            <strong>Vendas (Institucional)</strong>
+            <small>vendas@auxfarmacia.com.br</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">📰</div>
+          <div class="contact-content">
+            <strong>Imprensa</strong>
+            <small>imprensa@auxfarmacia.com.br</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">🔒</div>
+          <div class="contact-content">
+            <strong>Privacidade (LGPD)</strong>
+            <small>privacidade@auxfarmacia.com.br</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">📞</div>
+          <div class="contact-content">
+            <strong>Telefone</strong>
+            <small>+55 (11) 9999-9999</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">⏰</div>
+          <div class="contact-content">
+            <strong>Horário</strong>
+            <small>Seg-Sex, 9h-18h (BRT)</small>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon">🌐</div>
+          <div class="contact-content">
+            <strong>Website</strong>
+            <small>www.auxfarmacia.com.br</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="info-box">
+        <h3>✉️ Envie uma Mensagem</h3>
+
+        <form onsubmit="event.preventDefault(); alert('Mensagem enviada! Entraremos em contato em até 24h úteis.'); this.reset();">
+          <div class="form-group">
+            <label>Nome completo</label>
+            <input type="text" required placeholder="Seu nome" aria-label="Seu nome">
+          </div>
+
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" required placeholder="seu@email.com" aria-label="seu@email.com">
+          </div>
+
+          <div class="form-group">
+            <label>Assunto</label>
+            <select required>
+              <option value="">Selecione...</option>
+              <option>Suporte técnico</option>
+              <option>Dúvida sobre conteúdo</option>
+              <option>Sugestão de melhoria</option>
+              <option>Parceria comercial</option>
+              <option>Imprensa / Mídia</option>
+              <option>Problema com pagamento</option>
+              <option>Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Mensagem</label>
+            <textarea required placeholder="Descreva sua dúvida, sugestão ou solicitação..."></textarea>
+          </div>
+
+          <button type="submit" class="submit-btn">📤 Enviar Mensagem</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="info-box" style="margin-top:24px;">
+    <h3>🏢 Sede</h3>
+    <p>
+      <strong>Auxílio Farmácia LTDA</strong><br>
+      Av. Paulista, 1000 — Sala 1501<br>
+      Bela Vista — São Paulo/SP<br>
+      CEP: 01310-100<br>
+      CNPJ: 00.000.000/0001-00
+    </p>
+  </div>
+
+  <a href="index.html" class="back-link">← Voltar ao Início</a>
+</div>
+
+</body>
+</html>
