@@ -122,6 +122,27 @@ async function shaDe(caminho) {
   }
 
   console.log(`\n✅ ${ok}/${arquivos.length} arquivos enviados`);
+
+  // ---- SINCRONIZA: apaga no GitHub o que nao existe mais localmente ----
+  // (sem isso, arquivo removido local continua no repositorio -- foi o que
+  //  deixou o package.json antigo na raiz e enganou o Cloudflare Pages)
+  if (process.env.GITHUB_SYNC !== '0') {
+    const locais = new Set(arquivos.map(a => a.path));
+    const remotos = await gh('GET', `/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`);
+    const alvos = (remotos.tree || [])
+      .filter(t => t.type === 'blob')
+      .filter(t => !locais.has(t.path))
+      .filter(t => !/^(docs\/)/.test(t.path));   // preserva docs/ manualmente
+    if (alvos.length) {
+      console.log(`\n🧹 Sincronizando: ${alvos.length} arquivo(s) remoto(s) orfao(s)...`);
+      for (const t of alvos) {
+        const d = await gh('DELETE', `/repos/${OWNER}/${REPO}/contents/${t.path}?sha=${t.sha}&message=sync%3A%20remove%20arquivo%20orfao`);
+        console.log(`   ${d.ok ? '🗑️ ' : '⚠️  '} ${t.path}`);
+      }
+    } else {
+      console.log('\n🧹 Sincronizacao: nada a remover.');
+    }
+  }
   if (erros.length) {
     console.log(`❌ ${erros.length} erro(s):`);
     erros.slice(0, 10).forEach(e => console.log('   ' + e));
