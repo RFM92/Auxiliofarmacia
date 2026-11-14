@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="config.js"></script>
+<script>// ============================================================
+// AUTH SYNC SIMPLES - COMPATÍVEL COM INDEX E DASHBOARD
+// ============================================================
+(function() {
+  function hashPwd(pwd) {
+    if (!pwd) return '';
+    if (pwd.startsWith('h_')) return pwd;
+    let hash = 0;
+    for (let i = 0; i < pwd.length; i++) {
+      hash = ((hash << 5) - hash) + pwd.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return 'h_' + Math.abs(hash).toString(36);
+  }
+  
+  function normalizeUsers() {
+    try {
+      let users = JSON.parse(localStorage.getItem('auxf_users') || 'null');
+      if (!users) {
+        localStorage.setItem('auxf_users', '{}');
+        return {};
+      }
+      if (Array.isArray(users)) {
+        const obj = {};
+        users.forEach(u => {
+          if (!u || !u.email) return;
+          const email = u.email.toLowerCase();
+          obj[email] = {
+            nome: u.nome || email.split('@')[0],
+            email: email,
+            senha: hashPwd(u.password || u.senha || ''),
+            plano: u.plan || u.plano || 'free',
+            criado: u.createdAt || new Date().toISOString(),
+            expira: u.expiresAt || u.expira || null
+          };
+        });
+        localStorage.setItem('auxf_users', JSON.stringify(obj));
+        return obj;
+      }
+      if (typeof users === 'object') {
+        let modified = false;
+        Object.keys(users).forEach(email => {
+          const u = users[email];
+          if (!u) return;
+          if (u.senha && !u.senha.startsWith('h_')) {
+            u.senha = hashPwd(u.senha);
+            modified = true;
+          }
+          if (u.password && !u.senha) {
+            u.senha = hashPwd(u.password);
+            delete u.password;
+            modified = true;
+          }
+          if (!u.email) u.email = email;
+        });
+        if (modified) localStorage.setItem('auxf_users', JSON.stringify(users));
+        return users;
+      }
+      return users;
+    } catch(e) {
+      console.warn('[AuthSync] Erro:', e);
+      return {};
+    }
+  }
+  
+  // === CARREGA SESSAO IMEDIATAMENTE ===
+  function loadSession() {
+    try {
+      const session = JSON.parse(localStorage.getItem('auxf_session') || 'null');
+      if (!session || !session.email) return;
+      const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+      const user = users[session.email] || users[session.email.toLowerCase()];
+      if (user) {
+        // Define variáveis globais (compatível com dashboard)
+        window.currentUser = user;
+        window.currentUser.email = user.email || session.email;
+        window.currentPlan = session.plano || user.plano || 'free';
+        console.log('[AuthSync] Sessao carregada:', user.email);
+      }
+    } catch(e) {
+      console.warn('[AuthSync] Erro ao carregar sessao:', e);
+    }
+  }
+  
+  // API AuxAuth
+  window.AuxAuth = {
+    hashPwd: hashPwd,
+    getUser: function(email) {
+      const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+      return users[(email || '').toLowerCase()] || null;
+    },
+    getSession: function() {
+      try { return JSON.parse(localStorage.getItem('auxf_session') || 'null'); }
+      catch(e) { return null; }
+    },
+    saveSession: function(s) {
+      if (s && s.email) {
+        localStorage.setItem('auxf_session', JSON.stringify(s));
+      }
+    },
+    saveUsers: function(users) {
+      localStorage.setItem('auxf_users', JSON.stringify(users));
+    },
+    isLoggedIn: function() {
+      const s = this.getSession();
+      return !!(s && s.email);
+    },
+    getCurrentUser: function() {
+      const s = this.getSession();
+      if (!s || !s.email) return null;
+      return this.getUser(s.email);
+    },
+    // Setters para currentUser/currentPlan (usado pelo dashboard)
+    setCurrentUser: function(user) {
+      window.currentUser = user;
+    },
+    setCurrentPlan: function(plan) {
+      window.currentPlan = plan;
+    }
+  };
+  
+  // Executa
+  normalizeUsers();
+  loadSession();
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auxílio Farmácia — Guia Médico-Farmacêutico (Adulto e Pediátrico)</title>
+<meta name="description" content="Plataforma educacional para profissionais de farmácia. Calculadoras clínicas, bulas oficiais, mapas mentais, flashcards, cursos e painel administrativo.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0e1a;
+  --bg-card: #131826;
+  --bg-card-hover: #1a2030;
+  --border: #1f2937;
+  --border-light: #2d3748;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --primary: #14b8a6;
+  --primary-dark: #0d9488;
+  --gold: #f59e0b;
+  --purple: #8b5cf6;
+  --red: #ef4444;
+  --gradient-primary: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  --gradient-pro: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-premium: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --gradient-enterprise: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; min-height: 100vh; }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ===== AUTH BAR ===== */
+.auth-bar {
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.auth-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 40px; height: 40px;
+  background: var(--gradient-primary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700;
+  color: white;
+}
+.brand-name { font-size: 18px; font-weight: 700; color: white; letter-spacing: -0.3px; }
+.brand-tag { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; }
+
+.user-area { display: flex; align-items: center; gap: 12px; }
+.user-info-mini { display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 4px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border); }
+.user-avatar-mini {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 13px;
+}
+.user-text { font-size: 13px; }
+.user-name-mini { color: white; font-weight: 600; }
+.user-plan-mini { color: var(--text-muted); font-size: 11px; }
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--gradient-primary); color: white; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3); text-decoration: none; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-light); }
+.btn-ghost:hover { background: var(--bg-card); border-color: var(--primary); text-decoration: none; }
+.btn-gold { background: var(--gradient-pro); color: white; }
+.btn-purple { background: var(--gradient-premium); color: white; }
+
+/* ===== HERO ===== */
+.hero {
+  text-align: center;
+  padding: 80px 24px 60px;
+  background: radial-gradient(ellipse at top, rgba(20, 184, 166, 0.1) 0%, transparent 60%);
+}
+.hero-inner { max-width: 900px; margin: 0 auto; }
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1.5px;
+}
+.hero h1 .accent {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.stat {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== SECTION ===== */
+.section {
+  padding: 80px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.section-header { text-align: center; margin-bottom: 48px; }
+.section-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: white;
+  letter-spacing: -0.5px;
+}
+.section-sub {
+  color: var(--text-muted);
+  font-size: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ===== FEATURES GRID ===== */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.2s;
+}
+.feature-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+  transform: translateY(-2px);
+}
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(20, 184, 166, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+.feature-title { color: white; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.feature-desc { color: var(--text-muted); font-size: 14px; }
+
+/* ===== PRICING ===== */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.plan-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  position: relative;
+  transition: all 0.2s;
+}
+.plan-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-4px);
+}
+.plan-card.featured {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%);
+  border-color: var(--gold);
+  transform: scale(1.02);
+}
+.plan-badge-top {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  background: var(--gradient-pro);
+  color: white;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.plan-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+}
+.plan-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+.plan-price {
+  font-size: 36px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+.plan-price small {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.plan-cycle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+.plan-features {
+  list-style: none;
+  margin-bottom: 24px;
+}
+.plan-features li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.plan-features li:last-child { border-bottom: none; }
+.plan-features li::before {
+  content: "✓";
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.plan-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--bg-card-hover);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--border-light);
+  transition: all 0.2s;
+}
+.plan-cta:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  text-decoration: none;
+}
+.plan-cta.primary {
+  background: var(--gradient-pro);
+  border-color: transparent;
+}
+.plan-cta.primary:hover {
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+  text-decoration: none;
+}
+.plan-cta.purple {
+  background: var(--gradient-premium);
+  border-color: transparent;
+}
+.plan-cta.purple:hover {
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+  text-decoration: none;
+}
+.plan-cta.enterprise {
+  background: var(--gradient-enterprise);
+  border-color: transparent;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 40px 24px 24px;
+  margin-top: 60px;
+}
+.footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-brand p { color: var(--text-muted); font-size: 14px; margin-top: 12px; }
+.footer-col h4 { color: white; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.footer-col a { display: block; color: var(--text-muted); font-size: 13px; padding: 4px 0; }
+.footer-col a:hover { color: var(--primary); text-decoration: none; }
+.footer-bottom {
+  max-width: 1280px;
+  margin: 32px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .footer-inner { grid-template-columns: 1fr; }
+  .auth-bar-inner { flex-wrap: wrap; }
+}
+
+/* ===== AUTH MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+.modal-close:hover { background: var(--bg-card-hover); color: white; }
+.modal h2 { color: white; margin-bottom: 8px; }
+.modal p { color: var(--text-muted); margin-bottom: 24px; font-size: 14px; }
+.modal-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg); padding: 4px; border-radius: 8px; }
+.modal-tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.modal-tab.active { background: var(--primary); color: white; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+}
+.form-input:focus { outline: none; border-color: var(--primary); }
+.form-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: none;
+}
+.form-success {
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  color: var(--primary);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: none;
+}
+.modal-link { color: var(--primary); font-size: 13px; cursor: pointer; }
+.modal-link:hover { text-decoration: underline; }
+
+@media (max-width: 768px) {
+  .hero { padding: 60px 20px 40px; }
+  .section { padding: 60px 20px; }
+}
+
+/* ============================================================
+   ACESSO UNICO - CARD DE LOGIN (v2026.11)
+   ============================================================ */
+.access-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 440px;
+  margin: 28px auto 0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  text-align: left;
+}
+.access-card h2 {
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-family: var(--font-serif);
+}
+.access-card .access-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+.access-field { margin-bottom: 14px; }
+.access-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.access-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--border-light);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.access-field input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.16);
+}
+.access-field input::placeholder { color: var(--text-dim); opacity: 0.7; }
+.access-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.access-actions .btn { flex: 1 1 auto; justify-content: center; }
+.access-msg {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+}
+.access-msg.erro {
+  display: block;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+.access-msg.ok {
+  display: block;
+  background: rgba(20, 184, 166, 0.12);
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  color: var(--primary);
+}
+.access-links {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.access-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.access-links a:hover { text-decoration: underline; }
+.access-hint {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 9px;
+  background: rgba(20, 184, 166, 0.07);
+  border: 1px dashed rgba(20, 184, 166, 0.3);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.access-hint code {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--primary);
+  font-size: 12px;
+}
+.welcome-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 26px 28px;
+  max-width: 480px;
+  margin: 28px auto 0;
+  text-align: center;
+}
+.welcome-box .wb-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.welcome-box .wb-plan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 18px;
+}
+.welcome-box .wb-msg {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+@media (max-width: 520px) {
+  .access-card, .welcome-box { padding: 22px 18px; }
+}
+</style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<!-- ===== AUTH BAR (TOPO) ===== -->
+<div class="auth-bar">
+  <div class="auth-bar-inner">
+    <div class="brand">
+      <div class="brand-icon">Rx</div>
+      <div>
+        <div class="brand-name">Auxílio Farmácia</div>
+        <div class="brand-tag">GUIA MÉDICO-FARMACÊUTICO</div>
+      </div>
+    </div>
+    <div class="user-area" id="userArea">
+      <div id="userGuest">
+        <button class="btn btn-primary" onclick="goAccessLogin()">🔑 Entrar / Criar conta</button>
+      </div>
+      <div id="userLogged" style="display:none;">
+        <div class="user-info-mini">
+          <div class="user-avatar-mini" id="userAvatarMini">U</div>
+          <div class="user-text">
+            <div class="user-name-mini" id="userNameMini">Usuário</div>
+            <div class="user-plan-mini" id="userPlanMini">FREE</div>
+          </div>
+        </div>
+        <a href="dashboard-auxfarmacia.html" class="btn btn-ghost">📊 Entrar no site</a>
+        <button class="btn btn-ghost" onclick="doLogout()">🚪 Sair</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-inner" id="conteudo-principal">
+    <div class="hero-badge">✨ v2026.08 — Atualizado em 23/07/2026</div>
+    <h1>Guia Médico-Farmacêutico<br><span class="accent">Adulto e Pediátrico</span></h1>
+    <p class="hero-sub">Plataforma educacional completa para profissionais de farmácia e drogarias. Calculadoras clínicas, bulas oficiais, mapas mentais, flashcards interativos e cursos.</p>
+
+    <!-- ========== ACESSO UNICO ========== -->
+    <div id="accessGuest">
+      <form class="access-card" id="accessForm" onsubmit="event.preventDefault(); doAccessLogin();">
+        <h2>Acessar a plataforma</h2>
+        <p class="access-sub">Entre com sua conta para abrir os módulos liberados no seu plano.</p>
+
+        <div class="access-field">
+          <label for="accessEmail">E-mail</label>
+          <input type="email" id="accessEmail" placeholder="seu.email@profissional.com" required autocomplete="email">
+        </div>
+
+        <div class="access-field">
+          <label for="accessPassword">Senha</label>
+          <input type="password" id="accessPassword" placeholder="Sua senha" required autocomplete="current-password">
+        </div>
+
+        <div class="access-msg" id="accessMsg" role="status" aria-live="polite"></div>
+
+        <div class="access-actions">
+          <button type="submit" class="btn btn-primary">🔓 Entrar</button>
+          <a href="login.html#register" class="btn btn-ghost">✨ Criar conta</a>
+        </div>
+
+        <div class="access-links">
+          <a href="login.html#forgot">Esqueci minha senha</a>
+        </div>
+
+        <div class="access-hint">
+          <strong>Acesso de demonstração:</strong> use <code>admin@auxfarmacia.com.br</code> / <code>admin123</code>.<br>
+          Novos registros entram no plano <strong>FREE</strong> e podem ser atualizados a qualquer momento.
+        </div>
+      </form>
+    </div>
+
+    <div id="accessLogged" style="display:none;">
+      <div class="welcome-box">
+        <div class="wb-name" id="wbName">Olá!</div>
+        <div class="wb-plan" id="wbPlan">FREE</div>
+        <div class="wb-msg" id="wbMsg">
+          Sua sessão está ativa. Os módulos liberados para o seu plano já estão disponíveis.
+        </div>
+        <div class="access-actions">
+          <a href="dashboard-auxfarmacia.html" class="btn btn-primary">📊 Entrar no site</a>
+          <button type="button" class="btn btn-ghost" onclick="doAccessLogout()">🚪 Sair</button>
+        </div>
+      </div>
+    </div>
+    <!-- ========== FIM ACESSO UNICO ========== -->
+
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-value">61</div>
+        <div class="stat-label">Medicamentos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">10</div>
+        <div class="stat-label">Classes</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">9</div>
+        <div class="stat-label">Calculadoras</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">11</div>
+        <div class="stat-label">Vídeos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="section" id="recursos">
+  <div class="section-header">
+    <div class="section-tag">Recursos</div>
+    <h2 class="section-title">Tudo que você precisa</h2>
+    <p class="section-sub">Conteúdo educacional completo, baseado em bulas oficiais e referências nacionais.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💊</div>
+      <div class="feature-title">61 Medicamentos</div>
+      <div class="feature-desc">Posologia calculada por peso, mecanismos de ação, alertas, contraindicações e interações. Cobertura de antibióticos, AINEs, antialérgicos e mais.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧮</div>
+      <div class="feature-title">9 Calculadoras Clínicas</div>
+      <div class="feature-desc">Posologia, BSA, PEWS, IMC, clearance de creatinina, dose de carga, manutenção e mais. Cálculos rápidos e validados.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">Mapas Mentais SVG</div>
+      <div class="feature-desc">Visualização interativa das classes terapêuticas. Conexões entre mecanismos de ação, indicações e efeitos adversos.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎴</div>
+      <div class="feature-title">Flashcards Interativos</div>
+      <div class="feature-desc">Sistema de repetição espaçada para memorização de doses, intervalos e protocolos clínicos.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎓</div>
+      <div class="feature-title">2 Cursos Completos</div>
+      <div class="feature-desc">Anti-hipertensivos e Antidiabéticos. Trilha de 12 semanas, 3 níveis, com certificado de conclusão.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <div class="feature-title">Comparador de Classes</div>
+      <div class="feature-desc">Compare medicamentos lado a lado: eficácia, segurança, custo, posologia e perfil de efeitos adversos.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌳</div>
+      <div class="feature-title">Árvores de Decisão</div>
+      <div class="feature-desc">Fluxogramas passo-a-passo para cenários clínicos: febre sem sinais, dispneia, anafilaxia, etc.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <div class="feature-title">Casos Clínicos</div>
+      <div class="feature-desc">Cenários reais com raciocínio clínico passo-a-passo. Aprenda a tomar decisões baseadas em evidência.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section class="section" id="planos" style="background: rgba(20, 184, 166, 0.02); max-width: none; padding: 80px 24px;">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div class="section-header">
+      <div class="section-tag">Planos</div>
+      <h2 class="section-title">Escolha o plano ideal para você</h2>
+      <p class="section-sub">Comece grátis. Faça upgrade quando precisar. Sem fidelidade.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- FREE -->
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-desc">Para quem está começando a explorar</div>
+        <div class="plan-price">R$ 0<small>/mês</small></div>
+        <div class="plan-cycle">Para sempre</div>
+        <ul class="plan-features">
+          <li>61 medicamentos com posologia</li>
+          <li>5 calculadoras básicas</li>
+          <li>Resumo educacional</li>
+          <li>Mapas mentais básicos</li>
+          <li>Flashcards essenciais</li>
+        </ul>
+        <a href="dashboard-auxfarmacia-FREE.html" class="plan-cta">Começar grátis</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan-card featured">
+        <div class="plan-badge-top">⭐ Mais Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-desc">Ferramenta completa para profissionais</div>
+        <div class="plan-price">R$ 29,90<small>/mês</small></div>
+        <div class="plan-cycle">Cancele quando quiser</div>
+        <ul class="plan-features">
+          <li>✅ Tudo do Free</li>
+          <li>✅ Bulas oficiais ANVISA</li>
+          <li>✅ Histórico (50 cálculos)</li>
+          <li>✅ 9 calculadoras avançadas</li>
+          <li>✅ Comparador de classes</li>
+          <li>✅ Mapas mentais avançados</li>
+          <li>✅ Export PDF</li>
+          <li>✅ Suporte por email</li>
+        </ul>
+        <a href="checkout.html?plan=pro" class="plan-cta primary">Assinar Pro agora</a>
+      </div>
+
+      <!-- PREMIUM -->
+      <div class="plan-card">
+        <div class="plan-name">Premium</div>
+        <div class="plan-desc">Para especialistas e preceptores</div>
+        <div class="plan-price">R$ 79,90<small>/mês</small></div>
+        <div class="plan-cycle">Cancele quando quiser</div>
+        <ul class="plan-features">
+          <li>✅ Tudo do Pro</li>
+          <li>✅ Histórico ilimitado</li>
+          <li>✅ Todos os casos clínicos</li>
+          <li>✅ Telemetria avançada</li>
+          <li>✅ Suporte prioritário</li>
+          <li>✅ Acesso antecipado</li>
+          <li>✅ Multi-dispositivo</li>
+        </ul>
+        <a href="checkout.html?plan=premium" class="plan-cta purple">Assinar Premium</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="plan-card">
+        <div class="plan-name">Institucional</div>
+        <div class="plan-desc">Para clínicas, hospitais e prefeituras</div>
+        <div class="plan-price">R$ 297<small>/mês</small></div>
+        <div class="plan-cycle">5 usuários inclusos</div>
+        <ul class="plan-features">
+          <li>✅ Tudo do Premium</li>
+          <li>✅ Multi-usuário (5-50+)</li>
+          <li>✅ Painel administrativo</li>
+          <li>✅ Relatórios gerenciais</li>
+          <li>✅ Treinamento incluso</li>
+          <li>✅ SLA dedicado</li>
+        </ul>
+        <a href="mailto:vendas@auxfarmacia.com.br?subject=Auxílio%20Farmácia%20Institucional" class="plan-cta enterprise">Falar com vendas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand" style="margin-bottom: 8px;">
+        <div class="brand-icon">Rx</div>
+        <div>
+          <div class="brand-name">Auxílio Farmácia</div>
+          <div class="brand-tag">GUIA MÉDICO-FARMACÊUTICO</div>
+        </div>
+      </div>
+      <p>Plataforma educacional para profissionais de farmácia. Conteúdo baseado em bulas oficiais e referências nacionais.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Plataforma</h4>
+      <a href="dashboard-auxfarmacia-FREE.html">Dashboard FREE</a>
+      <a href="#planos">Planos</a>
+      <a href="ajuda.html">Ajuda</a>
+    </div>
+    <div class="footer-col">
+      <h4>Recursos</h4>
+      <a href="anvisa.html">Bulas ANVISA</a>
+      <a href="dashboard-auxfarmacia-educativo.html">Módulo Educativo</a>
+      <a href="admin.html">Painel Admin</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="termos.html">Termos de uso</a>
+      <a href="privacidade.html">Privacidade</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="contato.html">Contato</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2026 Auxílio Farmácia. Conteúdo educacional. Não fazemos recomendação de uso — sempre consulte um profissional de saúde.
+  </div>
+</footer>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuthModal()">×</button aria-label="×">
+    <h2 id="modalTitle">Acesso à plataforma</h2>
+    <p id="modalSubtitle">Entre ou crie uma conta gratuita.</p>
+
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="modal-tab" id="tabRegister" onclick="switchAuthTab('register')">Criar conta</button>
+    </div>
+
+    <div class="form-error" id="formError"></div>
+    <div class="form-success" id="formSuccess"></div>
+
+    <!-- LOGIN -->
+    <div id="formLogin">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="loginPassword" class="form-input" placeholder="••••••" required>
+      </div>
+      <button class="btn btn-primary" style="width:100%; margin-bottom: 12px;" onclick="doLogin()">🔓 Entrar</button>
+      <div style="text-align: center;">
+        <span role="button" tabindex="0" class="modal-link" onclick="switchAuthTab('forgot')">Esqueci minha senha</span>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="formRegister" style="display:none;">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" id="regName" class="form-input" placeholder="Seu nome" required>
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="regEmail" class="form-input" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Senha (mín. 6 caracteres)</label>
+        <input type="password" id="regPassword" class="form-input" placeholder="••••••" required>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="doRegister()">✨ Criar conta</button>
+    </div>
+
+    <!-- FORGOT -->
+    <div id="formForgot" style="display:none;">
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Digite seu e-mail. Vamos redefinir sua senha para uma senha temporária.
+      </p>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="forgotEmail" class="form-input" placeholder="seu@email.com" required>
+      </div>
+      <button class="btn btn-primary" style="width:100%; margin-bottom: 12px;" onclick="doForgot()">📧 Redefinir senha</button>
+      <div style="text-align: center;">
+        <span role="button" tabindex="0" class="modal-link" onclick="switchAuthTab('login')">Voltar para login</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============== AUTH STATE ==============
+const SAUDAÇÕES = {
+  manhã: '☀️ Bom dia',
+  tarde: '🌤️ Boa tarde',
+  noite: '🌙 Boa noite'
+};
+
+function getSaudacao() {
+  const h = new Date().getHours();
+  if (h < 12) return SAUDAÇÕES.manhã;
+  if (h < 18) return SAUDAÇÕES.tarde;
+  return SAUDAÇÕES.noite;
+}
+
+function getInitials(name) {
+  if (!name) return 'U';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+
+function getCurrentUser() {
+  // Debug global
+  if (typeof window.AuxAuth === 'undefined') {
+    console.error('[AUTH] AuxAuth nao foi carregado! Auth sync falhou.');
+  }
+  if (window.AuxAuth) {
+    return window.AuxAuth.getCurrentUser();
+  }
+  try {
+    const s = JSON.parse(localStorage.getItem('auxf_session') || '{}');
+    if (s && s.email) return s;
+  } catch(e) {}
+  return null;
+}
+
+function getStoredUser(email) {
+  if (window.AuxAuth) {
+    return window.AuxAuth.getUser(email);
+  }
+  try {
+    const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+    return users[email.toLowerCase()] || null;
+  } catch(e) { return null; }
+}
+
+function updateUserArea() {
+  const user = getCurrentUser();
+  const guest = document.getElementById('userGuest');
+  const logged = document.getElementById('userLogged');
+  
+  if (user && user.email) {
+    guest.style.display = 'none';
+    logged.style.display = 'flex';
+    const stored = getStoredUser(user.email);
+    const name = (stored && stored.nome) || user.nome || user.email.split('@')[0];
+    const plan = (stored && stored.plano) || user.plano || user.plan || 'free';
+    document.getElementById('userNameMini').textContent = name;
+    document.getElementById('userPlanMini').textContent = plan.toUpperCase();
+    document.getElementById('userAvatarMini').textContent = getInitials(name);
+  } else {
+    guest.style.display = 'block';
+    logged.style.display = 'none';
+  }
+}
+
+// ============== AUTH MODAL ==============
+function showAuthModal(tab) {
+  document.getElementById('authModal').classList.add('active');
+  switchAuthTab(tab || 'login');
+  document.getElementById('formError').style.display = 'none';
+  document.getElementById('formSuccess').style.display = 'none';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function switchAuthTab(tab) {
+  // Esconde todos
+  document.getElementById('formLogin').style.display = 'none';
+  document.getElementById('formRegister').style.display = 'none';
+  document.getElementById('formForgot').style.display = 'none';
+  document.getElementById('tabLogin').classList.remove('active');
+  document.getElementById('tabRegister').classList.remove('active');
+  
+  if (tab === 'login') {
+    document.getElementById('formLogin').style.display = 'block';
+    document.getElementById('tabLogin').classList.add('active');
+    document.getElementById('modalTitle').textContent = 'Entrar na sua conta';
+    document.getElementById('modalSubtitle').textContent = 'Acesse seu dashboard e continue aprendendo.';
+  } else if (tab === 'register') {
+    document.getElementById('formRegister').style.display = 'block';
+    document.getElementById('tabRegister').classList.add('active');
+    document.getElementById('modalTitle').textContent = 'Criar conta grátis';
+    document.getElementById('modalSubtitle').textContent = 'Leva menos de 30 segundos. Sem cartão de crédito.';
+  } else if (tab === 'forgot') {
+    document.getElementById('formForgot').style.display = 'block';
+    document.getElementById('modalTitle').textContent = 'Recuperar senha';
+    document.getElementById('modalSubtitle').textContent = 'Vamos redefinir sua senha.';
+  }
+}
+
+function showError(msg) {
+  const e = document.getElementById('formError');
+  e.textContent = '❌ ' + msg;
+  e.style.display = 'block';
+  document.getElementById('formSuccess').style.display = 'none';
+}
+
+function showSuccess(msg) {
+  const s = document.getElementById('formSuccess');
+  s.textContent = '✅ ' + msg;
+  s.style.display = 'block';
+  document.getElementById('formError').style.display = 'none';
+}
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  
+  if (!email || !password) {
+    showError('Preencha e-mail e senha.');
+    return;
+  }
+  
+  // Admin especial
+  if (email === 'admin@auxfarmacia.com.br' && password === 'admin123') {
+    // Cria o admin se nao existir
+    let users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+    if (!users[email]) {
+      users[email] = {
+        nome: 'Administrador', email: email, profissao: 'medico',
+        senha: AuxAuth.hashPwd('admin123'), plano: 'enterprise', role: 'admin',
+        criado: new Date().toISOString(), expira: null, historico: []
+      };
+      localStorage.setItem('auxf_users', JSON.stringify(users));
+    }
+    AuxAuth.saveSession({ email: email, plano: 'enterprise', expira: null });
+    showSuccess('Login realizado! Redirecionando...');
+    window.location.replace('admin.html');
+    return;
+  }
+  
+  // Procura usuario
+  const user = window.AuxAuth ? AuxAuth.getUser(email) : null;
+  
+  if (!user) {
+    showError('Conta não encontrada. Crie uma conta grátis.');
+    return;
+  }
+  
+  // Verifica senha (com hash)
+  const pwdHash = AuxAuth.hashPwd(password);
+  if (user.senha !== pwdHash) {
+    showError('Senha incorreta. Tente novamente ou use "Esqueci minha senha".');
+    return;
+  }
+  
+  // Login OK
+  AuxAuth.saveSession({ email: email, plano: user.plano || 'free', expira: user.expira });
+  showSuccess('Login realizado! Redirecionando...');
+  updateUserArea();
+  // Redirect IMEDIATO
+  window.location.replace('dashboard-auxfarmacia-FREE.html');
+}
+
+function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const password = document.getElementById('regPassword').value;
+  
+  if (!name || name.length < 3) {
+    showError('Nome deve ter pelo menos 3 caracteres.');
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    showError('E-mail inválido.');
+    return;
+  }
+  if (!password || password.length < 6) {
+    showError('Senha deve ter pelo menos 6 caracteres.');
+    return;
+  }
+  
+  let users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  
+  if (users[email]) {
+    showError('Já existe uma conta com este e-mail. Faça login.');
+    return;
+  }
+  
+  // Cria o usuario no formato COMPATIVEL com o dashboard
+  users[email] = {
+    nome: name,
+    email: email,
+    profissao: '',
+    crm: '',
+    senha: AuxAuth.hashPwd(password),
+    plano: 'free',
+    criado: new Date().toISOString(),
+    expira: null,
+    historico: []
+  };
+  localStorage.setItem('auxf_users', JSON.stringify(users));
+  
+  // Login automatico
+  AuxAuth.saveSession({ email: email, plano: 'free', expira: null });
+  
+  showSuccess('Conta criada! Bem-vindo(a), ' + name.split(' ')[0] + '! Redirecionando...');
+  updateUserArea();
+  // Redirect IMEDIATO
+  window.location.replace('dashboard-auxfarmacia-FREE.html');
+}
+
+function doForgot() {
+  const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+  
+  if (!email || !email.includes('@')) {
+    showError('E-mail inválido.');
+    return;
+  }
+  
+  let users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  
+  if (!users[email]) {
+    showError('Conta não encontrada com este e-mail.');
+    return;
+  }
+  
+  // Redefine para uma senha temporaria (com hash)
+  users[email].senha = AuxAuth.hashPwd('minhasenha');
+  users[email].senhaResetAt = new Date().toISOString();
+  localStorage.setItem('auxf_users', JSON.stringify(users));
+  
+  showSuccess('Senha redefinida para "minhasenha". Faça login e troque em configurações.');
+  setTimeout(() => {
+    switchAuthTab('login');
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = '';
+  }, 2000);
+}
+
+function doLogout() {
+  if (!confirm('Tem certeza que deseja sair?')) return;
+  if (window.AuxAuth) AuxAuth.logout();
+  else localStorage.removeItem('auxf_session');
+  updateUserArea();
+  setTimeout(() => window.location.reload(), 200);
+}
+
+// ============== INICIALIZAÇÃO ==============
+document.addEventListener('DOMContentLoaded', function() {
+  updateUserArea();
+  
+  // Fecha modal com ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAuthModal();
+  });
+  
+  // Fecha modal clicando fora
+  document.getElementById('authModal').addEventListener('click', function(e) {
+    if (e.target.id === 'authModal') closeAuthModal();
+  });
+  
+  // Submit ao apertar Enter
+  document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('regPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') doRegister();
+  });
+});
+
+/* ============================================================
+   ACESSO UNICO - LOGIN / LOGOUT / SESSAO
+   ============================================================ */
+function accessHash(pwd) {
+  if (!pwd) return '';
+  if (pwd.startsWith('h_')) return pwd;
+  let h = 0;
+  for (let i = 0; i < pwd.length; i++) {
+    h = ((h << 5) - h) + pwd.charCodeAt(i);
+    h = h & h;
+  }
+  return 'h_' + Math.abs(h).toString(36);
+}
+
+function accessMsg(texto, tipo) {
+  const el = document.getElementById('accessMsg');
+  if (!el) return;
+  el.textContent = texto;
+  el.className = 'access-msg ' + (tipo || 'erro');
+}
+
+function accessGetUsers() {
+  try {
+    const raw = localStorage.getItem('auxf_users');
+    const u = raw ? JSON.parse(raw) : null;
+    return u && typeof u === 'object' ? u : {};
+  } catch (e) { return {}; }
+}
+
+function accessSetUsers(u) {
+  localStorage.setItem('auxf_users', JSON.stringify(u));
+}
+
+function accessGetSession() {
+  try {
+    const raw = localStorage.getItem('auxf_session');
+    const s = raw ? JSON.parse(raw) : null;
+    return s && s.email ? s : null;
+  } catch (e) { return null; }
+}
+
+function accessApiBase() {
+    var cfg = (typeof window !== 'undefined' && window.AUXF_CONFIG) ? window.AUXF_CONFIG : {};
+    var b = (cfg && cfg.apiBase) ? String(cfg.apiBase).replace(/\/+$/, '') : '';
+    if (!b) {
+      var local = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:');
+      b = local ? 'http://localhost:8000' : window.location.origin;
+    }
+    return b;
+}
+
+function accessSaveSession(email, plano, expira, token, user) {
+  localStorage.setItem('auxf_session', JSON.stringify({
+    email: email,
+    plano: plano || 'free',
+    expira: expira || null
+  }));
+  localStorage.setItem('auxf_user_name', (user && user.nome) || email.split('@')[0]);
+  if (token) {
+    localStorage.setItem('auxf_api_token', token);
+    localStorage.setItem('auxf_refresh_token', user && user.refresh_token ? user.refresh_token : '');
+  }
+  if (user) {
+    localStorage.setItem('auxf_api_user', JSON.stringify(user));
+  }
+}
+
+function accessLoginLocal(email, pwd) {
+  const users = accessGetUsers();
+  const u = users[email];
+  if (!u) return { ok: false, motivo: 'Conta não encontrada. Clique em "Criar conta" para se cadastrar.' };
+  if (u.senha && u.senha !== accessHash(pwd)) {
+    return { ok: false, motivo: 'Senha incorreta. Se não lembrar, use "Esqueci minha senha".' };
+  }
+  return { ok: true, email: email, plano: u.plano || 'free', expira: u.expira || null, user: u };
+}
+
+function doAccessLogin() {
+  const emailEl = document.getElementById('accessEmail');
+  const pwdEl = document.getElementById('accessPassword');
+  const email = (emailEl ? emailEl.value : '').trim().toLowerCase();
+  const pwd = pwdEl ? pwdEl.value : '';
+
+  if (!email || !pwd) {
+    accessMsg('Preencha e-mail e senha.', 'erro');
+    return;
+  }
+
+  accessMsg('Verificando…', 'ok');
+
+  // 1) tenta o backend (fonte de verdade das contas)
+  fetch(accessApiBase() + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: pwd })
+  })
+    .then(function (r) {
+      if (r.status === 401 || r.status === 403) {
+        var e = new Error('credenciais');
+        e.credenciais = true;
+        throw e;
+      }
+      if (!r.ok) throw new Error('http_' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      const u = data.user || {};
+      const role = (u.role || '').toLowerCase();
+      const plano = (u.plan && u.plan !== 'free') ? u.plan : (role.indexOf('admin') !== -1 ? 'enterprise' : 'free');
+      accessSaveSession(email, plano, u.plan_expires_at || null, data.access_token, {
+        nome: u.name || u.nome || email.split('@')[0],
+        email: email,
+        role: u.role || 'user'
+      });
+      accessMsg('Login realizado! Abrindo a plataforma…', 'ok');
+      setTimeout(function () {
+        window.location.href = (role.indexOf('admin') !== -1) ? 'admin.html' : 'dashboard-auxfarmacia.html';
+      }, 700);
+    })
+    .catch(function (err) {
+      // 2) credencial recusada pelo servidor -> nao tenta local
+      if (err && err.credenciais) {
+        accessMsg('E-mail ou senha inválidos.', 'erro');
+        return;
+      }
+      // 3) fallback: contas locais (criadas nesta pagina)
+      const r = accessLoginLocal(email, pwd);
+      if (!r.ok) {
+        accessMsg(r.motivo, 'erro');
+        return;
+      }
+      accessSaveSession(r.email, r.plano, r.expira, null, { nome: r.user.nome, email: r.email });
+      accessMsg('Login realizado! Abrindo a plataforma…', 'ok');
+      setTimeout(function () {
+        window.location.href = 'dashboard-auxfarmacia.html';
+      }, 700);
+    });
+}
+
+function doAccessLogout() {
+  localStorage.removeItem('auxf_session');
+  localStorage.removeItem('auxf_user_name');
+  refreshAccessState();
+}
+
+function refreshAccessState() {
+  const guest = document.getElementById('accessGuest');
+  const logged = document.getElementById('accessLogged');
+  const barGuest = document.getElementById('userGuest');
+  const barLogged = document.getElementById('userLogged');
+  const s = accessGetSession();
+
+  if (s) {
+    if (guest) guest.style.display = 'none';
+    if (logged) logged.style.display = 'block';
+    if (barGuest) barGuest.style.display = 'none';
+    if (barLogged) barLogged.style.display = 'flex';
+
+    const users = accessGetUsers();
+    const u = users[s.email] || {};
+    const nome = u.nome || localStorage.getItem('auxf_user_name') || s.email.split('@')[0];
+    const plano = (s.plano || 'free').toUpperCase();
+
+    const wbName = document.getElementById('wbName');
+    const wbPlan = document.getElementById('wbPlan');
+    if (wbName) wbName.textContent = 'Olá, ' + nome.split(' ')[0] + '!';
+    if (wbPlan) wbPlan.textContent = plano;
+
+    const mini = document.getElementById('userNameMini');
+    const planMini = document.getElementById('userPlanMini');
+    const av = document.getElementById('userAvatarMini');
+    if (mini) mini.textContent = nome;
+    if (planMini) planMini.textContent = plano;
+    if (av) av.textContent = nome.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase();
+  } else {
+    if (guest) guest.style.display = 'block';
+    if (logged) logged.style.display = 'none';
+    if (barGuest) barGuest.style.display = 'block';
+    if (barLogged) barLogged.style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', refreshAccessState);
+
+</script>
+
+</body>
+</html>
