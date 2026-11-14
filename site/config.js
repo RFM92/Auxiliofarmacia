@@ -24,7 +24,7 @@ window.AUXF_CONFIG = {
      Exemplo local (desenvolvimento):
        apiBase: 'http://localhost:8000'
   */
-  apiBase: 'https://raphaelmenossi-maker-auxiliofarmacia-api.hf.space',
+  apiBase: 'https://auxiliofarmacia-api.hf.space',
 
   /* ---- Nome exibido no rodape/assinaturas ---- */
   appName: 'Auxílio Farmácia',
