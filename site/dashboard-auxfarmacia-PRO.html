@@ -3,6 +3,15 @@
 <head>
 <script>
 // ============================================================
+// PLANO DESTE BUILD
+// ============================================================
+// Este arquivo e o build do plano "pro". O build pago libera
+// o conteudo por si so, mesmo sem sessao (visitante / build avulso).
+window.AUXF_BUILD_PLAN = 'pro';
+</script>
+
+<script>
+// ============================================================
 // DEFINICOES GLOBAIS (FORA DE IIFE PARA GARANTIR ACESSO)
 // ============================================================
 function AuxAuth_showAuthModal(tab) {
@@ -334,7 +343,7 @@ console.log('[AuxAuth] Sistema de login instalado em escopo GLOBAL');
       // apenas no backend, sem registro em auxf_users local).
       window.currentUser = user || { nome: session.email.split('@')[0], email: session.email };
       window.currentUser.email = (user && user.email) || session.email;
-      window.currentPlan = session.plano || (user && user.plano) || 'free';
+      window.currentPlan = session.plano || (user && user.plano) || (typeof window.AUXF_BUILD_PLAN !== 'undefined' ? window.AUXF_BUILD_PLAN : 'free');
       console.log('[AuthSync] Sessao carregada:', session.email, '- Plano:', window.currentPlan);
     } catch(e) {
       console.warn('[AuthSync] Erro ao carregar sessao:', e);
@@ -1029,7 +1038,7 @@ window.addEventListener('load', function() {
 (function() {
   // Declara variaveis globais (caso nao existam)
   if (typeof window.currentUser === 'undefined') window.currentUser = null;
-  if (typeof window.currentPlan === 'undefined') window.currentPlan = 'free';
+  if (typeof window.currentPlan === 'undefined') window.currentPlan = (typeof window.AUXF_BUILD_PLAN !== 'undefined') ? window.AUXF_BUILD_PLAN : 'free';
   
   // Hash compativel
   function hashPwd(pwd) {
@@ -1058,7 +1067,7 @@ window.addEventListener('load', function() {
       // SESSAO manda no plano: conta pode estar so no backend
       window.currentUser = user || { nome: session.email.split('@')[0], email: session.email };
       window.currentUser.email = (user && user.email) || session.email;
-      window.currentPlan = session.plano || (user && user.plano) || 'free';
+      window.currentPlan = session.plano || (user && user.plano) || (typeof window.AUXF_BUILD_PLAN !== 'undefined' ? window.AUXF_BUILD_PLAN : 'free');
       console.log('[Dashboard] Sessao restaurada:', session.email, '- Plano:', window.currentPlan);
       if (!user) {
         console.warn('[Dashboard] Sessao sem registro local (conta do backend):', session.email);
@@ -8057,7 +8066,7 @@ textarea:focus-visible {
       // Nao aborta se nao houver registro local: a sessao ja traz o plano.
       window.currentUser = user || { nome: session.email.split('@')[0], email: session.email };
       window.currentUser.email = (user && user.email) || session.email;
-      window.currentPlan = session.plano || (user && user.plano) || 'free';
+      window.currentPlan = session.plano || (user && user.plano) || (typeof window.AUXF_BUILD_PLAN !== 'undefined' ? window.AUXF_BUILD_PLAN : 'free');
       
       // Esconde guestInfo, mostra userInfo
       const userInfo = document.getElementById('userInfo');
@@ -12640,6 +12649,14 @@ function restrictMeds() {
       try {
         const p = (typeof window.currentPlan !== 'undefined') ? window.currentPlan : null;
         if (p && p !== 'free') return false;
+      } catch(e) {}
+
+      // 4) PLANO DESTE BUILD (fonte mais forte): um build PRO/PREMIUM/
+      //    ENTERPRISE/educativo/master libera o conteudo por si so,
+      //    mesmo sem sessao (visita avulsa do build).
+      try {
+        const bp = (typeof window.AUXF_BUILD_PLAN !== 'undefined') ? window.AUXF_BUILD_PLAN : null;
+        if (bp && bp !== 'free') return false;
       } catch(e) {}
 
       return true;
