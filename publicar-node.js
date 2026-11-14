@@ -25,15 +25,16 @@ function coletar(raiz) {
   const out = [];
   (function walk(dir, prefixo) {
     for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+      const caminhoRel = prefixo ? `${prefixo}/${item.name}` : item.name;
+      // Caminho bloqueado (ex.: api/output = Manual do Admin + ZIPs completos)
+      if (IGNORAR_CAMINHOS.has(caminhoRel)) continue;
       if (item.isDirectory()) {
         if (IGNORAR_DIRS.has(item.name)) continue;
-        walk(path.join(dir, item.name), prefixo ? `${prefixo}/${item.name}` : item.name);
+        walk(path.join(dir, item.name), caminhoRel);
       } else {
         if (IGNORAR_ARQUIVOS.has(item.name)) continue;
         if (/\.pyc$/.test(item.name)) continue;
-        const caminhoRel = prefixo ? `${prefixo}/${item.name}` : item.name;
-        if (IGNORAR_CAMINHOS.has(caminhoRel)) continue;
-        out.push({ path: prefixo ? `${prefixo}/${item.name}` : item.name, abs: path.join(dir, item.name) });
+        out.push({ path: caminhoRel, abs: path.join(dir, item.name) });
       }
     }
   })(raiz, '');
