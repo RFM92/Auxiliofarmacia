@@ -23,21 +23,21 @@ O Auxílio Farmácia guarda **usuários, licenças, auditoria e histórico de
 pagamentos** no SQLite. Em disco efêmero, **um reinício apaga tudo** — e
 com plano pago no Asaas, isso é inaceitável.
 
-### Escolha o seu caminho
+### Decisão: **HF + persistent storage (US$ 5/mês)** ✅
 
-| Opção | Custo | Persistência | URL | Esforço |
-|---|---|---|---|---|
-| **A. HF + persistent storage** | US$ 5/mês | ✅ real | `auxiliofarmacia-api.hf.space` | baixo |
-| **B. Oracle Cloud Always Free** | **grátis** | ✅ real (200 GB) | IP ou domínio próprio | médio |
-| **C. Render (plano pago)** | ~US$ 7/mês | ✅ disco | `auxiliofarmacia-api.onrender.com` | baixo |
-| **D. HF grátis** | grátis | ❌ efêmero | `auxiliofarmacia-api.hf.space` | baixo |
+Escolhido. URL limpa, zero configuração extra e o webhook do Asaas pronto
+em minutos. As alternativas (Oracle Always Free, Render) ficam como
+plano B se o custo incomodar no futuro.
 
-**Minha recomendação: A para começar** (5 dólares, zero configuração extra,
-URL limpa e o webhook do Asaas pronto em minutos). Se o custo incomodar, **B**
-é o melhor FREE de verdade — 4 CPUs ARM e 200 GB no Always Free da Oracle.
+### Como ativar o persistent storage (obrigatório)
 
-Enquanto isso (opção D), o backend serve para **testar** — nunca para
-production com pagamento real.
+1. No Space, aba **Settings** → **Persistent storage** (ou *Storage*)
+2. Escolha o tier **Small — 20 GB — US$ 5/mês**
+3. Salve e **reinicie** o Space
+
+Pronto: o disco é montado em `/data` e o banco SQLite passa a sobreviver
+a reinícios. Sem isso, cada restart apaga usuários, licenças e histórico
+de pagamentos.
 
 ---
 
@@ -87,7 +87,9 @@ Na aba **Settings → Variables and secrets**:
 | `ASAAS_WEBHOOK_TOKEN` | string aleatória que você inventar |
 | `APP_CORS_ORIGINS` | `https://auxiliofarmacia.pages.dev` |
 | `APP_URL` | `https://auxiliofarmacia-api.hf.space` |
-| `DATABASE_URL` | `sqlite+aiosqlite:///./data/auxfarmacia.db` |
+| `DATABASE_URL` | `sqlite+aiosqlite:////data/auxfarmacia.db` (persistent storage) |
+| `OUTPUT_DIR` | `/app/output` (PDFs/ZIPs dos downloads) |
+| `DATA_DIR` | `/app/data` |
 
 > ⚠️ `SECRET_KEY` e as chaves **nunca** entram no GitHub. Ficam só nos
 > secrets do Space.
@@ -169,5 +171,10 @@ Se você criar um domínio próprio depois, acrescente com vírgula.
 ```
 
 O `Dockerfile` já cria o usuário sem privilégios, monta o SQLite em
-`/app/data` (é onde o persistent storage do HF é montado) e sobe o uvicorn
-na porta `${PORT:-7860}`.
+`/app/data` (é onde o persistent storage do HF é montado), cria
+`/app/output` para os arquivos de download e sobe o uvicorn na porta
+`${PORT:-7860}`.
+
+> 🔒 O **Manual do Administrador** fica em `api/output/` — que **não vai para
+> o GitHub** (está no `.gitignore`) e só é servido pela API, para usuário
+> admin autenticado, com log de auditoria. O mesmo vale para o ZIP completo.
