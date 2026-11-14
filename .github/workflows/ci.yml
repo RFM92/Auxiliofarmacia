@@ -1,0 +1,83 @@
+name: CI - Auditoria
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  auditoria:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install fastapi "uvicorn[standard]" sqlalchemy aiosqlite "python-jose[cryptography]" bcrypt httpx pydantic-settings email-validator python-multipart
+
+      - name: Sintaxe JS (node --check em todos os <script>)
+        run: python scripts/check_js_syntax.py
+
+      - name: Auditoria de acessibilidade (WCAG 2.1 AA)
+        run: python scripts/audit_ux.py
+
+      - name: Integridade de HTML (style/script balanceados)
+        run: |
+          python - <<'PY'
+          import re, glob, sys
+          erros = 0
+          for f in sorted(glob.glob('site/*.html')):
+              c = open(f, encoding='utf-8', errors='replace').read()
+              d = 0
+              for m in re.finditer(r'<style[^>]*>|</style>', c):
+                  d += 1 if m.group(0).lower().startswith('<style') else -1
+              so = len(re.findall(r'<script[^>]*>', c))
+              sc = len(re.findall(r'</script>', c))
+              if d or so != sc:
+                  print(f'ERRO {f}: style={d} script={so}/{sc}')
+                  erros += 1
+          print(f'{len(glob.glob("site/*.html"))} arquivos, {erros} erro(s)')
+          sys.exit(1 if erros else 0)
+          PY
+
+      - name: Links internos resolvem
+        run: |
+          python - <<'PY'
+          import re, glob, os, sys
+          raiz = 'site'
+          quebrados = []
+          for f in sorted(glob.glob(f'{raiz}/*.html')):
+              c = open(f, encoding='utf-8', errors='replace').read()
+              for m in re.finditer(r'href="([^"]*)"', c):
+                  l = m.group(1)
+                  if not l or l.startswith(('http','mailto:','tel:','javascript:','data:','#')):
+                      continue
+                  if '${' in l or l.startswith('/'):
+                      continue
+                  b = l.split('#')[0].split('?')[0]
+                  if b and not os.path.exists(os.path.join(raiz, b)):
+                      quebrados.append((os.path.basename(f), l))
+          print(f'{len(quebrados)} link(s) quebrado(s)')
+          for f, l in quebrados[:20]:
+              print(' ', f, '->', l)
+          sys.exit(1 if quebrados else 0)
+          PY
+
+      - name: Backend importa sem erro
+        run: |
+          cd api
+          python -c "
+          import ast, glob
+          for f in glob.glob('api/**/*.py', recursive=True):
+              ast.parse(open(f, encoding='utf-8').read())
+          print('Backend: sintaxe OK')
+          "
