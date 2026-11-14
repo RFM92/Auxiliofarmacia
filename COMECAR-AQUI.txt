@@ -3,7 +3,7 @@
 ══════════════════════════════════════════════════════════════
 
 Repositório (já criado e público):
-  https://github.com/raphaelmenossi-maker/Auxiliofarmacia
+  https://github.com/RFM92/Auxiliofarmacia
 
 ──────────────────────────────────────────────────────────────
 OPÇÃO A — Sem instalar o Git (RECOMENDADO se der erro
@@ -34,7 +34,7 @@ Feche e abra o terminal de novo, depois:
 OPÇÃO C — GitHub Desktop (botão na tela do GitHub)
 ──────────────────────────────────────────────────────────────
 Instala o Git junto. File → Add local repository → a pasta
-extraída → Publish repository → escolha raphaelmenossi-maker.
+extraída → Publish repository → escolha RFM92.
 
 ──────────────────────────────────────────────────────────────
 DEPOIS DO PUSH
