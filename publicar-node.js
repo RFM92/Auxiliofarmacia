@@ -18,6 +18,8 @@ const TOKEN = process.env.GITHUB_TOKEN;
 
 const IGNORAR_DIRS = new Set(['.git', 'node_modules', '__pycache__', '.venv', 'venv', '.idea', '.vscode']);
 const IGNORAR_ARQUIVOS = new Set(['.env', '.DS_Store', 'Thumbs.db']);
+// Arquivos restritos: nunca vao para o repo publico (saem via API autenticada)
+const IGNORAR_CAMINHOS = new Set(['api/output']);
 
 function coletar(raiz) {
   const out = [];
@@ -29,6 +31,8 @@ function coletar(raiz) {
       } else {
         if (IGNORAR_ARQUIVOS.has(item.name)) continue;
         if (/\.pyc$/.test(item.name)) continue;
+        const caminhoRel = prefixo ? `${prefixo}/${item.name}` : item.name;
+        if (IGNORAR_CAMINHOS.has(caminhoRel)) continue;
         out.push({ path: prefixo ? `${prefixo}/${item.name}` : item.name, abs: path.join(dir, item.name) });
       }
     }
