@@ -1,0 +1,69 @@
+══════════════════════════════════════════════════════════════
+  AUXÍLIO FARMÁCIA — COMEÇAR A PUBLICAR
+══════════════════════════════════════════════════════════════
+
+Repositório (já criado e público):
+  https://github.com/raphaelmenossi-maker/Auxiliofarmacia
+
+──────────────────────────────────────────────────────────────
+OPÇÃO A — Sem instalar o Git (RECOMENDADO se der erro
+          "'git' não é reconhecido como um comando")
+──────────────────────────────────────────────────────────────
+Precisa do Node.js (você já tem, pelo MiniMax Code).
+
+1) Abra o MiniMax Code na pasta extraída do ZIP
+2) Abra o terminal integrado
+3) Rode:
+
+     node publicar-node.js
+
+4) Ele vai pedir um Personal Access Token:
+     https://github.com/settings/tokens/new
+       → marque "repo" → Generate → copie o token
+5) Cole o token e aguarde. Em ~1 min está no GitHub.
+
+──────────────────────────────────────────────────────────────
+OPÇÃO B — Com Git instalado
+──────────────────────────────────────────────────────────────
+Instale o Git (1 comando no PowerShell):
+     winget install --id Git.Git -e --source winget
+Feche e abra o terminal de novo, depois:
+     publicar-local.bat
+
+──────────────────────────────────────────────────────────────
+OPÇÃO C — GitHub Desktop (botão na tela do GitHub)
+──────────────────────────────────────────────────────────────
+Instala o Git junto. File → Add local repository → a pasta
+extraída → Publish repository → escolha raphaelmenossi-maker.
+
+──────────────────────────────────────────────────────────────
+DEPOIS DO PUSH
+──────────────────────────────────────────────────────────────
+2) Cloudflare Pages (frontend)
+   https://dash.cloudflare.com/ → Workers & Pages → Create
+   → Connect to Git → repositório "Auxiliofarmacia"
+   → Build command: (vazio)
+   → Build output directory: site
+   → Deploy → https://auxiliofarmacia.pages.dev
+
+3) Hugging Face Spaces (backend)
+   https://huggingface.co/new-space → Docker
+   → suba a pasta "api/" do ZIP, renomeando:
+        Dockerfile.hf ......... Dockerfile
+        requirements.hf.txt ... requirements.txt
+   → Settings → Persistent storage → ENABLE
+   → Settings → Variables and secrets → configure as chaves
+   → https://SEU_USUARIO-auxiliofarmacia-api.hf.space
+
+4) Ligue o frontend ao backend
+   Edite "site/config.js":
+        apiBase: 'https://SEU_USUARIO-auxiliofarmacia-api.hf.space'
+   Commit → o Cloudflare redeploya sozinho.
+
+5) Webhook do Asaas (URL fixa!)
+   Painel Asaas → Integração → Webhooks
+     Eventos: PAYMENT_RECEIVED, PAYMENT_CONFIRMED
+     URL: https://SEU_USUARIO-auxiliofarmacia-api.hf.space/api/payments/webhook/asaas
+
+Guias detalhados: GUIA_HF_SPACE.md · GUIA_DEPLOY.md · GUIA_ASAAS.md
+══════════════════════════════════════════════════════════════
