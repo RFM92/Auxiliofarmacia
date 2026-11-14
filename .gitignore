@@ -1,0 +1,46 @@
+# ---- SEGREDOS (nunca versionar) ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# ---- PYTHON ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# ---- BANCO DE DADOS ----
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+auxfarmacia.db
+
+# ---- NODE ----
+node_modules/
+npm-debug.log*
+
+# ---- BUILD / SO ----
+dist/
+build/
+*.zip
+!*.zip.manifest
+
+# ---- SISTEMA ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.log
+
+# ---- GITHUB PAGES ----
+_site/
+.jekyll-cache/
