@@ -30,7 +30,7 @@ conflito:
 1. No dashboard do Cloudflare: **Workers & Pages** → botão **Create application**
 2. Escolha **Pages** → **Connect to Git**
 3. Em **Select a repository**:
-   - conta: `raphaelmenossi-maker`
+   - conta: `RFM92`
    - repositório: `Auxiliofarmacia`
    - → **Next**
 4. Em **Set up builds and deployments**:
