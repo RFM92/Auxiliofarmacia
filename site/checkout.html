@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="config.js"></script>
+<script>// ============================================================
+// AUTH SYNC SIMPLES - COMPATÍVEL COM INDEX E DASHBOARD
+// ============================================================
+(function() {
+  function hashPwd(pwd) {
+    if (!pwd) return '';
+    if (pwd.startsWith('h_')) return pwd;
+    let hash = 0;
+    for (let i = 0; i < pwd.length; i++) {
+      hash = ((hash << 5) - hash) + pwd.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return 'h_' + Math.abs(hash).toString(36);
+  }
+  
+  function normalizeUsers() {
+    try {
+      let users = JSON.parse(localStorage.getItem('auxf_users') || 'null');
+      if (!users) {
+        localStorage.setItem('auxf_users', '{}');
+        return {};
+      }
+      if (Array.isArray(users)) {
+        const obj = {};
+        users.forEach(u => {
+          if (!u || !u.email) return;
+          const email = u.email.toLowerCase();
+          obj[email] = {
+            nome: u.nome || email.split('@')[0],
+            email: email,
+            senha: hashPwd(u.password || u.senha || ''),
+            plano: u.plan || u.plano || 'free',
+            criado: u.createdAt || new Date().toISOString(),
+            expira: u.expiresAt || u.expira || null
+          };
+        });
+        localStorage.setItem('auxf_users', JSON.stringify(obj));
+        return obj;
+      }
+      if (typeof users === 'object') {
+        let modified = false;
+        Object.keys(users).forEach(email => {
+          const u = users[email];
+          if (!u) return;
+          if (u.senha && !u.senha.startsWith('h_')) {
+            u.senha = hashPwd(u.senha);
+            modified = true;
+          }
+          if (u.password && !u.senha) {
+            u.senha = hashPwd(u.password);
+            delete u.password;
+            modified = true;
+          }
+          if (!u.email) u.email = email;
+        });
+        if (modified) localStorage.setItem('auxf_users', JSON.stringify(users));
+        return users;
+      }
+      return users;
+    } catch(e) {
+      console.warn('[AuthSync] Erro:', e);
+      return {};
+    }
+  }
+  
+  // === CARREGA SESSAO IMEDIATAMENTE ===
+  function loadSession() {
+    try {
+      const session = JSON.parse(localStorage.getItem('auxf_session') || 'null');
+      if (!session || !session.email) return;
+      const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+      const user = users[session.email] || users[session.email.toLowerCase()];
+      if (user) {
+        // Define variáveis globais (compatível com dashboard)
+        window.currentUser = user;
+        window.currentUser.email = user.email || session.email;
+        window.currentPlan = session.plano || user.plano || 'free';
+        console.log('[AuthSync] Sessao carregada:', user.email);
+      }
+    } catch(e) {
+      console.warn('[AuthSync] Erro ao carregar sessao:', e);
+    }
+  }
+  
+  // API AuxAuth
+  window.AuxAuth = {
+    hashPwd: hashPwd,
+    getUser: function(email) {
+      const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+      return users[(email || '').toLowerCase()] || null;
+    },
+    getSession: function() {
+      try { return JSON.parse(localStorage.getItem('auxf_session') || 'null'); }
+      catch(e) { return null; }
+    },
+    saveSession: function(s) {
+      if (s && s.email) {
+        localStorage.setItem('auxf_session', JSON.stringify(s));
+      }
+    },
+    saveUsers: function(users) {
+      localStorage.setItem('auxf_users', JSON.stringify(users));
+    },
+    isLoggedIn: function() {
+      const s = this.getSession();
+      return !!(s && s.email);
+    },
+    getCurrentUser: function() {
+      const s = this.getSession();
+      if (!s || !s.email) return null;
+      return this.getUser(s.email);
+    },
+    // Setters para currentUser/currentPlan (usado pelo dashboard)
+    setCurrentUser: function(user) {
+      window.currentUser = user;
+    },
+    setCurrentPlan: function(plan) {
+      window.currentPlan = plan;
+    }
+  };
+  
+  // Executa
+  normalizeUsers();
+  loadSession();
+})();
+</script>
+  <meta name="description" content="Auxílio Farmácia - plataforma educacional com 61 medicamentos, 10 Classes terapêuticas, 9 calculadoras, 2 cursos completos e 7 módulos educacionais para profissionais de farmácia.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Auxílio Farmácia</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007c77'/><text x='50' y='65' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>Rx</text></svg>">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --teal: #007c77;
+      --teal-light: #14b8a6;
+      --teal-gradient: linear-gradient(135deg, #007c77 0%, #00a39a 100%);
+      --ink: #16201f;
+      --muted: #60706d;
+      --bg: #f5f7f8;
+      --panel: #ffffff;
+      --line: #dbe3e1;
+      --soft: #eef4f2;
+      --green: #217346;
+      --blue: #2c5a8a;
+      --amber: #b66a00;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .checkout-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--teal); }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* ===== FORM ===== */
+    .checkout-form {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 12px rgba(19, 35, 33, 0.08);
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--teal-gradient);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .step h2 {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .form-section {
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--ink-soft);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: var(--panel);
+      color: var(--ink);
+      transition: border 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--teal);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 124, 119, 0.15);
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .pm-option {
+      position: relative;
+      padding: 14px 8px;
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pm-option input { display: none; }
+
+    .pm-option.selected {
+      border-color: var(--teal);
+      background: rgba(0, 124, 119, 0.05);
+    }
+
+    .pm-icon { font-size: 1.5rem; }
+    .pm-name { font-size: 0.78rem; font-weight: 600; margin-top: 4px; }
+
+    .card-form { display: none; }
+    .card-form.active { display: block; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      border: 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--teal-gradient);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 124, 119, 0.30);
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 124, 119, 0.40); }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ===== SUMMARY ===== */
+    .order-summary {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      position: sticky;
+      top: 24px;
+      box-shadow: 0 4px 12px rgba(19, 35, 33, 0.08);
+    }
+
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .summary-plan {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(0, 124, 119, 0.05) 0%, transparent 100%);
+      border: 1.5px solid var(--teal);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .summary-plan-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    .summary-plan-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.9rem;
+    }
+
+    .summary-row.total {
+      border-top: 1px solid var(--line);
+      margin-top: 8px;
+      padding-top: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    .summary-trust {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .summary-trust div::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    /* ===== ALERTS ===== */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+    }
+    .alert-error {
+      background: #fee2e2;
+      color: #7f1d1d;
+      border-left: 4px solid #ef4444;
+    }
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+
+    /* ===== SUCCESS MODAL ===== */
+    .success-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .success-modal.show { display: flex; }
+
+    .success-box {
+      background: var(--panel);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s;
+    }
+
+    .success-icon {
+      font-size: 5rem;
+      margin-bottom: 16px;
+      animation: bounceIn 0.6s;
+    }
+
+    .success-box h2 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      background: var(--teal-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .license-key {
+      background: var(--soft);
+      border: 1.5px dashed var(--teal);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: monospace;
+      font-size: 1.05rem;
+      color: var(--teal);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      user-select: all;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0); }
+      60% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 900px) {
+      .checkout-grid { grid-template-columns: 1fr; }
+      .order-summary { position: static; }
+    }
+  </style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<div class="checkout-container" id="conteudo-principal">
+  <a href="landing.html" class="back-link">← Voltar para a loja</a>
+
+  <div class="checkout-grid">
+
+    <!-- FORM -->
+    <div class="checkout-form">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h1>Dados pessoais</h1>
+      </div>
+
+      <div class="form-section">
+        <div class="form-row">
+          <div>
+            <label>Nome completo *</label>
+            <input type="text" id="inputName" placeholder="Dr. João Silva" required>
+          </div>
+          <div>
+            <label>CRM (opcional)</label>
+            <input type="text" id="inputCrm" placeholder="CRM-SP 123456">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>E-mail *</label>
+            <input type="email" id="inputEmail" placeholder="seu@email.com" required>
+          </div>
+          <div>
+            <label>CPF (para NF)</label>
+            <input type="text" id="inputCpf" placeholder="000.000.000-00">
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <h2>Forma de pagamento</h2>
+      </div>
+
+      <div class="payment-methods">
+        <label class="pm-option selected" data-method="card">
+          <input type="radio" name="pm" value="card" checked aria-label="pm">
+          <div class="pm-icon">💳</div>
+          <div class="pm-name">Cartão</div>
+        </label>
+        <label class="pm-option" data-method="pix">
+          <input type="radio" name="pm" value="pix" aria-label="pm">
+          <div class="pm-icon">⚡</div>
+          <div class="pm-name">PIX</div>
+        </label>
+        <label class="pm-option" data-method="boleto">
+          <input type="radio" name="pm" value="boleto" aria-label="pm">
+          <div class="pm-icon">📄</div>
+          <div class="pm-name">Boleto</div>
+        </label>
+        <label class="pm-option" data-method="invoice">
+          <input type="radio" name="pm" value="invoice" aria-label="pm">
+          <div class="pm-icon">🏦</div>
+          <div class="pm-name">NF</div>
+        </label>
+      </div>
+
+      
+<div id="cardGatewayInfo" style="display: none; background: rgba(20,184,166,0.08); border: 1px solid rgba(20,184,166,0.3); border-radius: 10px; padding: 14px; margin-top: 12px; font-size: 13px; color: var(--muted);">🔒 <strong>Ambiente seguro.</strong> Ao continuar, voce sera redirecionado ao checkout do gateway (Stripe/Asaas) para digitar os dados do cartao. Nenhum dado de cartao trafega por este site.</div>
+
+      <div class="card-form" id="pixForm" style="text-align: center; padding: 20px;">
+        <p style="color: var(--muted);">Você será redirecionado para a tela do seu banco para confirmar o pagamento via PIX.</p>
+      </div>
+
+      <div class="card-form" id="boletoForm" style="text-align: center; padding: 20px;">
+        <p style="color: var(--muted);">O boleto será gerado e enviado para seu e-mail. Pagável em até 3 dias úteis.</p>
+      </div>
+
+      <div class="card-form" id="invoiceForm" style="padding: 20px;">
+        <label>CNPJ *</label>
+        <input type="text" id="inputCnpj" placeholder="00.000.000/0000-00">
+        <label style="margin-top: 12px;">Razão social *</label>
+        <input type="text" id="inputRazao" placeholder="Hospital ou Clínica LTDA">
+      </div>
+
+      <div id="alertBox"></div>
+
+      <button class="btn btn-primary" id="btnPay" onclick="processPayment()">
+        🔒 Finalizar pagamento
+      </button>
+
+      <p style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--muted);">
+        🔒 Pagamento 100% seguro. Processado por Stripe/Asaas com criptografia SSL.
+      </p>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="order-summary">
+      <h3 class="summary-title">Resumo do pedido</h3>
+
+      <div class="summary-plan">
+        <div class="summary-plan-name" id="planName">Auxílio Farmácia Pro</div>
+        <div class="summary-plan-desc" id="planDesc">Acesso completo por 1 mês</div>
+      </div>
+
+      <div class="summary-row">
+        <span>Plano</span>
+        <span id="planPrice">R$ 29,90</span>
+      </div>
+      <div class="summary-row">
+        <span>Desconto</span>
+        <span style="color: var(--green);">R$ 0,00</span>
+      </div>
+      <div class="summary-row">
+        <span>Impostos</span>
+        <span>Inclusos</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="planTotal">R$ 29,90</span>
+      </div>
+
+      <div class="summary-trust">
+        <div>Garantia de 7 dias</div>
+        <div>Cancele quando quiser</div>
+        <div>Suporte em português</div>
+        <div>Acesso imediato após pagamento</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="pixBox" style="display: none; background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-top: 16px;"></div>
+<div class="success-modal" id="successModal">
+  <div class="success-box">
+    <div class="success-icon">🎉</div>
+    <h2>Pagamento confirmado!</h2>
+    <p style="color: var(--muted); margin-bottom: 16px;">Pagamento de <strong id="successPlan">Pro</strong> confirmado. Sua licença é ativada assim que o gateway confirma.</p>
+
+    <p style="font-size: 0.88rem; color: var(--muted);">Sua chave de ativação (enviada por e-mail):</p>
+    <div class="license-key" id="licenseKey">AUXFARMA-XXXXX-XXXXX-XXXXX-XXXXX</div>
+    <p style="font-size: 0.78rem; color: var(--muted);">📧 Também enviamos para seu e-mail</p>
+
+    <div style="display: flex; gap: 8px; margin-top: 20px;">
+      <a href="dashboard-auxfarmacia-FREE.html" class="btn btn-primary" style="text-decoration: none; text-align: center; display: block;">🚀 Acessar dashboard</a>
+      <button class="btn" style="background: var(--bg); color: var(--ink); border: 1px solid var(--line);" onclick="copyLicense()">📋 Copiar chave</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== CONFIGURAÇÃO DOS PLANOS =====
+  const PLANS = {
+    pro: { name: 'Pro', price: 29.90, desc: 'Acesso completo por 1 mês' },
+    premium: { name: 'Premium', price: 79.90, desc: 'Acesso completo + bulas internacionais' },
+    institutional: { name: 'Institucional', price: 297.00, desc: '5 usuários + painel admin' }
+  };
+
+  // Pega o plano da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const planKey = urlParams.get('plan') || 'pro';
+  const plan = PLANS[planKey] || PLANS.pro;
+
+  // Atualiza UI
+  document.getElementById('planName').textContent = 'Auxílio Farmácia ' + plan.name;
+  document.getElementById('planDesc').textContent = plan.desc;
+  document.getElementById('planPrice').textContent = 'R$ ' + plan.price.toFixed(2).replace('.', ',');
+  document.getElementById('planTotal').textContent = 'R$ ' + plan.price.toFixed(2).replace('.', ',');
+  document.getElementById('successPlan').textContent = plan.name;
+
+  // ===== TROCA DE MÉTODO DE PAGAMENTO =====
+  document.querySelectorAll('.pm-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.pm-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      opt.querySelector('input').checked = true;
+
+      const method = opt.dataset.method;
+      document.querySelectorAll('.card-form').forEach(f => f.classList.remove('active'));
+      // O cartao e digitado no gateway hospedado: nao ha formulario de cartao aqui.
+      if (method === 'pix') document.getElementById('pixForm').classList.add('active');
+      else if (method === 'boleto') document.getElementById('boletoForm').classList.add('active');
+      else if (method === 'invoice') document.getElementById('invoiceForm').classList.add('active');
+      if (method === 'card') {
+        const info = document.getElementById('cardGatewayInfo');
+        if (info) info.style.display = 'block';
+      } else {
+        const info = document.getElementById('cardGatewayInfo');
+        if (info) info.style.display = 'none';
+      }
+    });
+  });
+  
+  // Máscara de validade
+  
+  // Máscara de CPF/CNPJ
+  function maskCpf(v) {
+    v = v.replace(/\D/g, '').substring(0, 11);
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return v;
+  }
+
+  function maskCnpj(v) {
+    v = v.replace(/\D/g, '').substring(0, 14);
+    v = v.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
+    return v;
+  }
+
+  document.getElementById('inputCpf')?.addEventListener('input', (e) => e.target.value = maskCpf(e.target.value));
+  document.getElementById('inputCnpj')?.addEventListener('input', (e) => e.target.value = maskCnpj(e.target.value));
+
+  // ===== PROCESSAR PAGAMENTO =====
+  async function processPayment() {
+    const name = document.getElementById('inputName').value.trim();
+    const email = document.getElementById('inputEmail').value.trim();
+
+    if (!name || !email) {
+      showAlert('error', '⚠️ Preencha nome e e-mail.');
+      return;
+    }
+
+    const method = document.querySelector('.pm-option.selected').dataset.method;
+
+    // O cartao NAO e coletado neste site: os dados sao digitados diretamente
+    // no checkout hospedado do gateway (PCI-DSS).
+
+    // Desabilita botão
+    const btn = document.getElementById('btnPay');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;"></span> Processando...';
+
+    // Metodo da UI -> metodo da API
+    const apiMethod = {
+      card:   'stripe_card',
+      pix:    'asaas_pix',
+      boleto: 'asaas_boleto'
+    }[method] || 'stripe_card';
+
+    const cpf = (document.getElementById('inputCpf') ? document.getElementById('inputCpf').value : '').trim()
+             || (document.getElementById('inputCnpj') ? document.getElementById('inputCnpj').value : '').trim() || null;
+    const token = localStorage.getItem('auxf_api_token') || '';
+
+    try {
+      const resp = await fetch(checkoutApiBase() + '/api/payments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+        },
+        body: JSON.stringify({
+          plan: planKey,
+          method: apiMethod,
+          cpf_cnpj: cpf,
+          installments: 1
+        })
+      });
+
+      const data = await resp.json().catch(() => ({}));
+
+      if (!resp.ok || data.success === false) {
+        const msg = data.detail || data.error || 'Nao foi possivel iniciar o pagamento.';
+        showAlert('error', msg);
+        btn.disabled = false;
+        btn.innerHTML = 'Pagar R$ ' + plan.price.toFixed(2).replace('.', ',');
+        return;
+      }
+
+      // PIX tem prioridade: no Brasil o codigo copia-e-cola + QR e o padrao.
+      // (O Asaas tambem devolve invoice_url; aqui ele vira link secundario.)
+      if (data.pix_code || data.pix_qr_code) {
+        showPixPayment(data, planKey);
+        btn.disabled = false;
+        btn.innerHTML = 'Pagar R$ ' + plan.price.toFixed(2).replace('.', ',');
+        return;
+      }
+
+      // Stripe / boleto -> checkout hospedado do gateway
+      const redirectUrl = data.checkout_url || data.invoice_url;
+      if (redirectUrl) {
+        showAlert('info', 'Redirecionando para o gateway de pagamento...');
+        if (data.payment_id) {
+          localStorage.setItem('auxf_pending_payment_id', data.payment_id);
+          localStorage.setItem('auxf_pending_plan', planKey);
+        }
+        window.location.href = redirectUrl;
+        return;
+      }
+
+      // Asaas -> boleto
+      if (data.boleto_url) {
+        showBoletoPayment(data, planKey);
+        btn.disabled = false;
+        btn.innerHTML = 'Pagar R$ ' + plan.price.toFixed(2).replace('.', ',');
+        return;
+      }
+
+      // Modo demo do backend (sem credenciais de gateway)
+      if (data.mode === 'demo') {
+        showDemoPayment(data, planKey);
+        return;
+      }
+
+      showAlert('error', 'O gateway nao retornou forma de pagamento. Tente outro metodo.');
+      btn.disabled = false;
+      btn.innerHTML = 'Pagar R$ ' + plan.price.toFixed(2).replace('.', ',');
+    } catch (err) {
+      // Backend fora do ar: NAO finge que o pagamento foi feito
+      console.error('[Checkout] Falha ao chamar a API de pagamento:', err);
+      showAlert('error', 'Nao foi possivel conectar ao servidor de pagamento. Verifique sua conexao e tente novamente.');
+      btn.disabled = false;
+      btn.innerHTML = 'Pagar R$ ' + plan.price.toFixed(2).replace('.', ',');
+    }
+  }
+
+  function checkoutApiBase() {
+    var cfg = (typeof window !== 'undefined' && window.AUXF_CONFIG) ? window.AUXF_CONFIG : {};
+    var b = (cfg && cfg.apiBase) ? String(cfg.apiBase).replace(/\/+$/, '') : '';
+    if (!b) {
+      var local = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:');
+      b = local ? 'http://localhost:8000' : window.location.origin;
+    }
+    return b;
+  }
+
+  // ===== PAGAMENTO VIA PIX (Asaas) =====
+  function showPixPayment(data, planKey) {
+    const box = document.getElementById('pixBox');
+    if (!box) return;
+    box.innerHTML = `
+      <h3 style="color: var(--ink); margin-bottom: 6px;">Pague com PIX</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+        Abra o app do seu banco, escolha PIX e use o codigo copia-e-cola:
+      </p>
+      ${data.pix_qr_code ? `<img src="${data.pix_qr_code}" alt="QR Code PIX do pagamento da assinatura Auxilio Farmacia" style="width: 220px; height: 220px; background: #fff; padding: 10px; border-radius: 10px; margin-bottom: 12px;">` : ''}
+      <textarea id="pixCode" readonly aria-label="Codigo PIX copia e cola"
+        style="width: 100%; min-height: 90px; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); word-break: break-all;">${data.pix_code || ''}</textarea>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button type="button" id="btnCopyPix" class="btn" style="background: var(--bg); color: var(--ink); border: 1px solid var(--line); flex: 1;">Copiar codigo</button>
+        <button type="button" id="btnCheckPix" class="btn btn-primary" style="flex: 1;">Ja paguei - verificar</button>
+      </div>
+      <p id="pixStatus" role="status" aria-live="polite" style="font-size: 0.8rem; color: var(--muted); margin-top: 10px;"></p>
+      ${data.invoice_url ? `<p style="font-size: 0.78rem; color: var(--muted); margin-top: 8px;">Prefere pagar pelo app do banco? <a href="${data.invoice_url}" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">Abrir no Asaas</a></p>` : ''}
+    `;
+    box.style.display = 'block';
+    wirePaymentButtons(data.payment_id, planKey);
+  }
+
+  function copyPix() {
+    const ta = document.getElementById('pixCode');
+    if (!ta) return;
+    ta.select();
+    const done = () => showAlert('success', 'Codigo PIX copiado!');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(done).catch(() => { document.execCommand('copy'); done(); });
+    } else {
+      document.execCommand('copy');
+      done();
+    }
+  }
+
+  // ===== PAGAMENTO VIA BOLETO =====
+  function showBoletoPayment(data, planKey) {
+    const box = document.getElementById('pixBox');
+    if (!box) return;
+    box.innerHTML = `
+      <h3 style="color: var(--ink); margin-bottom: 6px;">Boleto bancario</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+        Vence em ${data.due_date || '3 dias uteis'}.
+      </p>
+      <a href="${data.boleto_url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary"
+         style="display: block; text-align: center; text-decoration: none; margin-bottom: 10px;">Abrir boleto</a>
+      <button type="button" id="btnCheckPix" class="btn" style="background: var(--bg); color: var(--ink); border: 1px solid var(--line); width: 100%;">Ja paguei - verificar</button>
+      <p id="pixStatus" role="status" aria-live="polite" style="font-size: 0.8rem; color: var(--muted); margin-top: 10px;"></p>
+    `;
+    box.style.display = 'block';
+    wirePaymentButtons(data.payment_id, planKey);
+  }
+
+  function wirePaymentButtons(paymentId, planKey) {
+    // guarda o id para a pagina de sucesso consultar o status
+    if (paymentId) {
+      localStorage.setItem('auxf_pending_payment_id', paymentId);
+      localStorage.setItem('auxf_pending_plan', planKey);
+    }
+    const bCopy = document.getElementById('btnCopyPix');
+    if (bCopy) bCopy.addEventListener('click', copyPix);
+    const bCheck = document.getElementById('btnCheckPix');
+    if (bCheck) bCheck.addEventListener('click', function () { checkPaymentStatus(paymentId, planKey); });
+  }
+
+  // ===== VERIFICA STATUS DO PAGAMENTO =====
+  async function checkPaymentStatus(paymentId, planKey) {
+    const st = document.getElementById('pixStatus');
+    if (st) st.textContent = 'Verificando pagamento...';
+    try {
+      const token = localStorage.getItem('auxf_api_token') || '';
+      const r = await fetch(checkoutApiBase() + '/api/payments/check/' + paymentId, {
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+      });
+      const d = await r.json().catch(() => ({}));
+      const pago = d.status === 'paid' || d.status === 'confirmed' || d.paid_at || d.paid;
+      if (pago) {
+        if (st) st.innerHTML = '<strong>Pagamento confirmado!</strong> Abrindo a plataforma...';
+        localStorage.setItem('auxf_pending_plan', planKey);
+        setTimeout(function () { window.location.href = 'dashboard-auxfarmacia.html'; }, 1200);
+      } else if (st) {
+        st.textContent = 'Pagamento ainda nao confirmado. Se ja pagou, aguarde alguns minutos e clique em verificar novamente.';
+      }
+    } catch (e) {
+      if (st) st.textContent = 'Nao foi possivel verificar agora. Tente novamente em instantes.';
+    }
+  }
+
+  // ===== MODO DEMO (backend sem credenciais de gateway) =====
+  function showDemoPayment(data, planKey) {
+    const box = document.getElementById('pixBox');
+    if (box) {
+      box.innerHTML = `
+        <h3 style="color: var(--ink); margin-bottom: 6px;">Modo demonstracao</h3>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+          As credenciais do gateway nao estao configuradas, portanto
+          <strong>nenhuma cobranca real foi feita</strong> e nenhum plano foi ativado.
+        </p>
+        <button type="button" id="btnCheckPix" class="btn btn-primary" style="width: 100%;">Verificar status</button>
+        <p id="pixStatus" role="status" aria-live="polite" style="font-size: 0.8rem; color: var(--muted); margin-top: 10px;"></p>
+      `;
+      box.style.display = 'block';
+      wirePaymentButtons(data.paymentId || data.payment_id, planKey);
+    }
+    showAlert('info', 'Modo demonstracao: nenhuma cobranca real foi realizada.');
+  }
+
+
+  function copyLicense() {
+    const key = document.getElementById('licenseKey').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = event.target;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copiado!';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+
+  function showAlert(type, msg) {
+    document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  }
+</script>
+
+</body>
+</html>
