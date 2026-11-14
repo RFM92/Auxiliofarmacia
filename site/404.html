@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="Página não encontrada no Auxílio Farmácia.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Página não encontrada — Auxílio Farmácia</title>
 <style>
@@ -16,10 +17,15 @@ p{color:var(--muted);font-size:14px;line-height:1.65;margin-bottom:24px}
 a{display:inline-block;padding:12px 22px;border-radius:9px;background:var(--primary);color:#fff;
   text-decoration:none;font-weight:700;font-size:14px}
 a:hover{background:#0d9488}
+
+.skip-link{position:absolute;left:-9999px;top:0;z-index:99;background:#115e59;color:#fff;padding:12px 20px;border-radius:0 0 8px 0;font-weight:700;text-decoration:none}
+.skip-link:focus{left:0;outline:3px solid #fbbf24;outline-offset:2px}
+:focus-visible{outline:3px solid #fbbf24;outline-offset:2px;border-radius:4px}
 </style>
 </head>
 <body>
-<div class="box">
+<a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+<div class="box" id="conteudo">
   <div class="code">404</div>
   <h1>Página não encontrada</h1>
   <p>O endereço que você tentou acessar não existe ou foi movido.
