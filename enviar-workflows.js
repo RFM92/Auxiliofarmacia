@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const OWNER = process.env.GITHUB_OWNER || 'raphaelmenossi-maker';
+const OWNER = process.env.GITHUB_OWNER || 'RFM92';
 const REPO = process.env.GITHUB_REPO || 'Auxiliofarmacia';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
 const API = 'https://api.github.com';
