@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/downloads", tags=["Downloads"])
 
-OUTPUT_DIR = Path("/workspace/output")
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "/workspace/output"))
 
 
 def _check_admin(user: User = Depends(get_current_user)):
