@@ -9,7 +9,9 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=7860 \
-    DATABASE_URL=sqlite+aiosqlite:///./data/auxfarmacia.db
+    DATABASE_URL=sqlite+aiosqlite:///./data/auxfarmacia.db \
+    OUTPUT_DIR=/app/output \
+    DATA_DIR=/app/data
 
 # Cria o usuario sem privilegios (o Space roda como root por padrao)
 RUN useradd -m -u 1000 auxfarmacia
@@ -21,7 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 # Pasta do SQLite (persistent storage do Space monta aqui)
-RUN mkdir -p /app/data && chown -R auxfarmacia:auxfarmacia /app/data /app
+RUN mkdir -p /app/data /app/output && chown -R auxfarmacia:auxfarmacia /app/data /app/output /app
 USER auxfarmacia
 
 EXPOSE 7860
