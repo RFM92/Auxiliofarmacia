@@ -1,127 +1,97 @@
 #!/usr/bin/env node
 /**
- * Deploy direto do frontend no Cloudflare Pages (API Direct Upload).
+ * Publica o frontend estatico no Cloudflare Pages (Direct Upload).
  *
- * Nao depende do build do GitHub: publica o conteudo de site/ direto.
- * Uso:
- *   CLOUDFLARE_API_TOKEN=xxx CLOUDFLARE_ACCOUNT_ID=xxx \
- *   node scripts/deploy-cloudflare.js [--dry-run]
+ *   CLOUDFLARE_API_TOKEN=xxx node scripts/deploy-cloudflare.js [projeto]
  *
- * Token precisa das permissoes:
- *   - Cloudflare Pages: Edit
- *   - Account Settings: Read
+ * Usa o wrangler por baixo dos panos (o upload direto via API crua exige um
+ * formato de manifest que so o wrangler monta direito).
+ *
+ * O token precisa de:
+ *   - Account > Workers Scripts > Edit
+ *   - Account > Account Settings > Read
+ *   - Account > Pages > Edit
  */
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 const TOKEN = process.env.CLOUDFLARE_API_TOKEN || '';
 const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || '';
-const PROJECT = process.env.CLOUDFLARE_PROJECT || 'auxiliofarmacia';
 const SITE = path.resolve(__dirname, '..', 'site');
-const DRY = process.argv.includes('--dry-run');
+const PROJECT = process.argv[2] || process.env.CLOUDFLARE_PROJECT || 'auxilio-farmacia';
 
 if (!TOKEN) {
   console.error('\n❌ CLOUDFLARE_API_TOKEN ausente.\n');
   process.exit(2);
 }
 
-function api(pathname, opts = {}) {
-  return fetch(`https://api.cloudflare.com/client/v4${pathname}`, {
-    ...opts,
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      ...(opts.headers || {}),
-    },
-  }).then(async (r) => {
-    const t = await r.text();
-    let j;
-    try { j = JSON.parse(t); } catch { j = { raw: t }; }
-    if (!r.ok) {
-      const err = (j.errors || []).map((e) => `${e.code}: ${e.message}`).join('; ') || t.slice(0, 300);
-      throw new Error(`${opts.method || 'GET'} ${pathname} -> ${r.status} ${err}`);
-    }
-    return j;
-  });
-}
-
-function coletar(dir, base = '') {
-  const out = [];
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const abs = path.join(dir, e.name);
-    const rel = base ? `${base}/${e.name}` : e.name;
-    if (e.isDirectory()) out.push(...coletar(abs, rel));
-    else out.push({ path: rel, abs, size: fs.statSync(abs).size });
-  }
-  return out;
+function api(method, pathname) {
+  const r = spawnSync('curl', [
+    '-s', '--max-time', '30',
+    '-X', method,
+    '-H', `Authorization: Bearer ${TOKEN}`,
+    `https://api.cloudflare.com/client/v4${pathname}`,
+  ], { encoding: 'utf8' });
+  try { return JSON.parse(r.stdout); } catch { return { success: false, raw: r.stdout }; }
 }
 
 (async () => {
-  console.log('\n=== DEPLOY CLOUDFLARE PAGES (direct upload) ===\n');
+  console.log(`\n=== DEPLOY CLOUDFLARE PAGES: ${PROJECT} ===\n`);
 
-  // 1) account id
-  let account = ACCOUNT;
-  if (!account) {
-    const r = await api('/accounts?per_page=5');
-    if (!r.result || !r.result.length) throw new Error('Nenhuma conta encontrada com este token.');
-    account = r.result[0].id;
-    console.log(`  conta: ${r.result[0].name} (${account})`);
+  const accs = api('GET', '/accounts');
+  if (!accs.success) {
+    console.error('  ❌ token invalido:', JSON.stringify(accs.errors || accs.raw).slice(0, 200));
+    process.exit(1);
+  }
+  const acc = accs.result[0];
+  console.log(`  conta: ${acc.name}`);
+  if (ACCOUNT && ACCOUNT !== acc.id) console.log(`  ⚠️  CLOUDFLARE_ACCOUNT_ID diverge; usando o da conta do token`);
+
+  const proj = api('GET', `/accounts/${acc.id}/pages/projects/${PROJECT}`);
+  if (!proj.success) {
+    console.log(`  criando o projeto "${PROJECT}"...`);
+    const cr = api('POST', `/accounts/${acc.id}/pages/projects`);
+    if (!cr.success) {
+      console.error('  ❌ nao foi possivel criar o projeto:', JSON.stringify(cr.errors).slice(0, 300));
+      process.exit(1);
+    }
+    console.log('  criado ✅');
   } else {
-    console.log(`  conta: ${account}`);
+    console.log(`  projeto: https://${proj.result.subdomain}`);
   }
 
-  // 2) garante que o projeto existe
-  const proj = await api(`/accounts/${account}/pages/projects/${PROJECT}`);
-  if (proj.success) {
-    console.log(`  projeto "${PROJECT}" ja existe`);
-  } else {
-    console.log(`  criando projeto "${PROJECT}"...`);
-    const cr = await api(`/accounts/${account}/pages/projects`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: PROJECT, production_branch: 'main' }),
+  const arquivos = fs.readdirSync(SITE).filter((f) => !f.startsWith('.'));
+  console.log(`\n  enviando ${arquivos.length} entradas de site/ ...`);
+
+  const env = { ...process.env, CLOUDFLARE_API_TOKEN: TOKEN, CLOUDFLARE_ACCOUNT_ID: acc.id };
+  const raiz = path.resolve(__dirname, '..');
+
+  // O Pages exige que o wrangler.toml fique na RAIZ do projeto, mas a raiz
+  // tem o config do WORKER. Troca um pelo outro durante o deploy.
+  const cfgRaiz = path.join(raiz, 'wrangler.toml');
+  const cfgWorker = fs.readFileSync(cfgRaiz, 'utf8');
+  const cfgPages = fs.readFileSync(path.join(raiz, 'deploy', 'wrangler.pages.toml'), 'utf8');
+
+  let r;
+  try {
+    fs.writeFileSync(cfgRaiz, cfgPages);
+    r = spawnSync('npx', ['wrangler', 'pages', 'deploy', './site',
+      '--project-name', PROJECT, '--branch', 'main', '--commit-dirty=true'], {
+      cwd: raiz,
+      env,
+      encoding: 'utf8',
     });
-    console.log(`  projeto criado: ${cr.result?.name || 'ok'}`);
+  } finally {
+    fs.writeFileSync(cfgRaiz, cfgWorker);
   }
 
-  // 3) arquivos
-  const files = coletar(SITE);
-  const total = files.reduce((s, f) => s + f.size, 0);
-  console.log(`\n  arquivos: ${files.length}  |  tamanho: ${(total / 1024 / 1024).toFixed(2)} MB`);
-  if (DRY) {
-    console.log('\n  --dry-run: nada foi enviado.\n');
-    files.forEach((f) => console.log(`    ${f.path}  (${(f.size / 1024).toFixed(1)} KB)`));
-    return;
+  const out = (r.stdout || '') + (r.stderr || '');
+  out.split('\n').filter((l) => l.trim()).forEach((l) => console.log('   ' + l.slice(0, 160)));
+
+  if (r.status !== 0) {
+    console.error('\n❌ FALHA no deploy.\n');
+    process.exit(1);
   }
-
-  // 4) manifest + upload
-  const manifest = files.map((f) => ({
-    id: crypto.createHash('sha256').update(f.path).digest('hex').slice(0, 16),
-    path: f.path,
-    size: f.size,
-  }));
-
-  const fd = new FormData();
-  fd.append('manifest', JSON.stringify(manifest), 'manifest.json');
-  for (const f of files) {
-    fd.append('file', new Blob([fs.readFileSync(f.abs)]), f.path);
-  }
-
-  console.log('\n  enviando arquivos...');
-  const res = await api(`/accounts/${account}/pages/projects/${PROJECT}/deployments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'multipart/form-data' },
-    body: fd,
-  });
-
-  const id = res.result?.id;
-  const url = res.result?.url;
-  console.log(`\n  ✅ DEPLOY CONCLUIDO`);
-  console.log(`     deployment: ${id}`);
-  console.log(`     url:       ${url}`);
-  console.log(`     aliases:   ${(res.result?.aliases || []).join(', ') || '(nenhum)'}`);
-  console.log(`\n  Dominio padrao: https://${PROJECT}.pages.dev\n`);
-})().catch((e) => {
-  console.error('\n❌ ERRO:', e.message, '\n');
-  process.exit(1);
-});
+  console.log(`\n  🎉  https://${PROJECT}.pages.dev\n`);
+})();
