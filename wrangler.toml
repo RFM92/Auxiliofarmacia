@@ -1,0 +1,20 @@
+# ============================================================
+# Cloudflare Workers (Static Assets) — alternativa ao Pages
+#
+# O Cloudflare recomenda Workers Static Assets para projetos novos.
+# Use este arquivo se escolher "Create application > GitHub" (Workers)
+# em vez de "Create application > Pages > Connect to Git".
+#
+# Depois de conectar o repo no dashboard, o Cloudflare lê este arquivo
+# automaticamente para saber qual pasta servir.
+# ============================================================
+name = "auxiliofarmacia"
+compatibility_date = "2026-11-14"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./site"
+not_found_handling = "404-page"
+
+# Sem backend no Worker: a API roda no Hugging Face Spaces
+# e o frontend aponta para ela via site/config.js
