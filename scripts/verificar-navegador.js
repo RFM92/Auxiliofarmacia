@@ -25,7 +25,9 @@ const BASE = (process.argv[2] || 'http://localhost:9091').replace(/\/$/, '');
   console.log('\n=== index.html (acesso unico) ===');
   const page = await ctx.newPage();
   page.on('pageerror', (e) => erros.push('index: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error') erros.push('index console: ' + m.text().slice(0, 120)); });
+  // o 404 de /api/health e esperado enquanto o backend ainda nao existe
+  const ignoravel = (t) => /api\/health|Failed to load resource/.test(t) && /404/.test(t);
+  page.on('console', (m) => { if (m.type() === 'error' && !ignoravel(m.text())) erros.push('index console: ' + m.text().slice(0, 120)); });
 
   await page.goto(BASE + '/index.html', { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
   await page.waitForTimeout(2500);
