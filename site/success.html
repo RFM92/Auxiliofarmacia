@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagamento confirmado — Auxílio Farmácia</title>
+<meta name="description" content="Confirmação de pagamento da assinatura Auxílio Farmácia.">
+<style>
+:root{
+  --bg:#0a0e1a; --card:#131826; --line:#334155; --primary:#14b8a6; --primary-dark:#0d9488;
+  --ink:#f1f5f9; --muted:#94a3b8; --amber:#fbbf24; --green:#34d399;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; align-items:center; justify-content:center; padding:24px;
+}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:18px;
+  padding:36px; max-width:520px; width:100%; text-align:center;
+  box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+.icon{
+  width:78px; height:78px; margin:0 auto 20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:38px;
+  background:rgba(52,211,153,.14); border:2px solid rgba(52,211,153,.45);
+}
+.icon.erro{ background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.45); }
+h1{font-size:25px;margin-bottom:8px;font-weight:800}
+p.sub{color:var(--muted);font-size:14.5px;line-height:1.65;margin-bottom:22px}
+.plano{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;
+  background:rgba(20,184,166,.14);border:1px solid rgba(20,184,166,.4);
+  color:var(--primary);font-weight:800;font-size:13px;letter-spacing:.5px;margin-bottom:20px;
+}
+.box{
+  background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-align:left;margin-bottom:22px;font-size:13.5px;color:var(--muted);
+}
+.box strong{color:var(--ink)}
+.status{font-size:14px;margin-bottom:18px;color:var(--muted)}
+.spinner{
+  display:inline-block;width:14px;height:14px;border:2px solid rgba(20,184,166,.3);
+  border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;
+  vertical-align:-2px;margin-right:6px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn{
+  display:inline-block;padding:13px 24px;border-radius:10px;text-decoration:none;
+  font-weight:700;font-size:14px;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);margin-left:8px}
+.btn-ghost:hover{border-color:var(--primary)}
+.avis{
+  margin-top:20px;padding:12px 14px;border-radius:10px;font-size:12.5px;line-height:1.6;
+  background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.3);color:#fcd34d;text-align:left;
+}
+.avis strong{color:var(--amber)}
+@media (max-width:520px){.card{padding:26px 20px}.btn{width:100%;margin:0 0 10px}}
+
+/* ===== ACESSIBILIDADE: skip-link + foco visivel ===== */
+.skip-link {
+  position:absolute; left:-9999px; top:0; z-index:999999;
+  background:var(--primary); color:#fff; padding:12px 20px;
+  border-radius:0 0 8px 0; font-weight:700; text-decoration:none;
+}
+.skip-link:focus { left:0; outline:3px solid var(--amber); outline-offset:2px; }
+:focus-visible { outline:3px solid var(--amber); outline-offset:2px; border-radius:4px; }
+a:focus-visible, button:focus-visible { outline:3px solid var(--amber); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:.01ms !important; transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+<div class="card" id="conteudo-principal">
+  <div class="icon" id="icon">⏳</div>
+  <h1 id="title">Confirmando seu pagamento…</h1>
+  <p class="sub" id="sub">Estamos aguardando a confirmação do gateway. Isso costuma levar alguns segundos.</p>
+
+  <div class="plano" id="plano">—</div>
+
+  <div class="status"><span class="spinner"></span><span id="statusTxt">Consultando o gateway…</span></div>
+
+  <div class="box" id="box" style="display:none"></div>
+
+  <div id="acoes">
+    <a class="btn btn-primary" href="dashboard-auxfarmacia.html">📊 Ir para a plataforma</a>
+    <a class="btn btn-ghost" href="checkout.html">Voltar ao checkout</a>
+  </div>
+
+  <div class="avis">
+    <strong>Importante:</strong> este site é educacional e não substitui bula,
+    prescrição ou avaliação médica individualizada. Consulte sempre um
+    <strong>médico ou farmacêutico</strong>.
+  </div>
+</div>
+
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const plan = (params.get('plan') || 'pro').toUpperCase();
+  const nomes = { pro: 'Pro', premium: 'Premium', institutional: 'Institucional' };
+  document.getElementById('plano').textContent = 'PLANO ' + (nomes[plan.toLowerCase()] || plan);
+
+  const token = localStorage.getItem('auxf_api_token') || '';
+  const pendente = localStorage.getItem('auxf_pending_plan');
+  const statusEl = document.getElementById('statusTxt');
+  const box = document.getElementById('box');
+  const icon = document.getElementById('icon');
+  const title = document.getElementById('title');
+  const sub = document.getElementById('sub');
+
+  function base() {
+    var cfg = (typeof window !== 'undefined' && window.AUXF_CONFIG) ? window.AUXF_CONFIG : {};
+    var b = (cfg && cfg.apiBase) ? String(cfg.apiBase).replace(/\/+$/, '') : '';
+    if (!b) {
+      var local = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:');
+      b = local ? 'http://localhost:8000' : window.location.origin;
+    }
+    return b;
+  }
+
+  function mostrarPago(d) {
+    icon.textContent = '✅';
+    icon.className = 'icon';
+    title.textContent = 'Pagamento confirmado!';
+    sub.textContent = 'Sua assinatura está liberada. O acesso já está disponível no seu plano.';
+    statusEl.textContent = 'Pagamento confirmado pelo gateway.';
+    box.style.display = 'block';
+    box.innerHTML =
+      '<strong>Plano:</strong> ' + (nomes[(pendente || plan || 'pro').toLowerCase()] || plan) + '<br>' +
+      '<strong>Valor:</strong> R$ ' + (d.value != null ? Number(d.value).toFixed(2).replace('.', ',') : '29,90') + '<br>' +
+      '<strong>ID do pagamento:</strong> ' + (d.id || d.payment_id || '—');
+    localStorage.removeItem('auxf_pending_plan');
+    // aplica o plano na sessao local para o paywall liberar imediatamente
+    try {
+      const s = JSON.parse(localStorage.getItem('auxf_session') || '{}');
+      s.plano = (pendente || plan || 'pro').toLowerCase();
+      localStorage.setItem('auxf_session', JSON.stringify(s));
+    } catch (e) {}
+  }
+
+  function mostrarPendente(msg) {
+    icon.textContent = '⏳';
+    icon.className = 'icon';
+    title.textContent = 'Pagamento em andamento';
+    sub.textContent = msg || 'O gateway ainda não confirmou o pagamento. Se você já pagou, aguarde alguns minutos.';
+    statusEl.textContent = 'Aguardando confirmação…';
+    setTimeout(verificar, 6000);
+  }
+
+  async function verificar() {
+    // 1) se temos o id do pagamento (do checkout), consulta
+    const paymentId = params.get('payment_id') || localStorage.getItem('auxf_pending_payment_id');
+    if (paymentId) {
+      try {
+        const r = await fetch(base() + '/api/payments/check/' + paymentId, {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        const d = await r.json().catch(() => ({}));
+        if (d.status === 'paid' || d.status === 'confirmed' || d.paid_at || d.paid) {
+          mostrarPago(d);
+          return;
+        }
+        mostrarPendente();
+        return;
+      } catch (e) { /* segue para o fallback */ }
+    }
+
+    // 2) fallback: consulta o pagamento mais recente do usuario
+    try {
+      const r = await fetch(base() + '/api/payments/my', {
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+      });
+      if (r.ok) {
+        const lista = await r.json();
+        const pago = (lista || []).find(p => p.status === 'paid' || p.status === 'confirmed');
+        if (pago) { mostrarPago(pago); return; }
+      }
+    } catch (e) {}
+
+    mostrarPendente();
+  }
+
+  verificar();
+})();
+</script>
+</body>
+</html>
