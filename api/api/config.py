@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     WORKERS: int = 1
     RELOAD: bool = True
 
+    # ========== ARQUIVOS PARA DOWNLOAD ==========
+    # Caminho onde ficam os PDFs/ZIPs servidos pelos endpoints de download.
+    # No HF Space: /app/output (montado pelo Dockerfile).
+    OUTPUT_DIR: str = "/workspace/output"
+    # Diretorio do banco SQLite (persistent storage no HF: /app/data)
+    DATA_DIR: str = "./data"
+
     # ========== DATABASE ==========
     # SQLite (dev) ou PostgreSQL (prod)
     DATABASE_URL: str = "sqlite+aiosqlite:///./auxfarmacia.db"
