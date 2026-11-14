@@ -1,0 +1,70 @@
+name: Build e Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da release (ex: v2026.08.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Montar os pacotes
+        run: |
+          set -e
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "Build da release $TAG"
+
+          cd site
+          ZIP="AuxilioFarmacia_${TAG}_STANDALONE.zip"
+          zip -r "../$ZIP" \
+            index.html login.html success.html config.js landing.html checkout.html admin.html \
+            ABRA-AQUI.html api-client.js \
+            dashboard-auxfarmacia.html \
+            dashboard-auxfarmacia-FREE.html dashboard-auxfarmacia-PRO.html \
+            dashboard-auxfarmacia-PREMIUM.html dashboard-auxfarmacia-ENTERPRISE.html \
+            dashboard-auxfarmacia-educativo.html \
+            termos.html privacidade.html sobre.html contato.html ajuda.html anvisa.html \
+            RELATORIO_BUGS.md GUIA_ASAAS.md \
+            Auxilio_Farmacia-Apresentacao_Comercial.pdf \
+            Auxilio_Farmacia-Manual_do_Administrador.pdf
+          cd ..
+          ls -lh *.zip
+
+      - name: Publicar no GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Auxílio Farmácia ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            *.zip
+          body: |
+            ## Auxílio Farmácia — ${{ github.event.inputs.tag || github.ref_name }}
+
+            ### Conteúdo
+            - Dashboard de posologia (61 medicamentos, 10 classes terapêuticas)
+            - 9 calculadoras clínicas (mg/kg/dia, mg/kg/dose, mg/m²/BSA Mosteller, UI/kg/dia, volume)
+            - 2 cursos completos + trilha de 12 semanas
+            - Paywall por plano (Free / Pro R$ 29,90 / Premium R$ 79,90 / Institucional R$ 297)
+            - Login único e checkout com PIX, boleto e cartão
+
+            ### ⚠️ Aviso
+            Ferramenta educacional. Não substitui bula, prescrição ou avaliação
+            médica individualizada. Consulte sempre um médico ou farmacêutico.
+
+          body_path: /dev/null
+          fail_on_unmatched_files: false
