@@ -15,13 +15,15 @@ Verifica:
   - foco visivel
 """
 import re
+import sys
 import glob
 import os
 import json
 from pathlib import Path
 from collections import Counter, defaultdict
 
-OUT = Path('/workspace/output')
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _paths import SITE as OUT, AUDITORIA, html_files  # noqa: E402
 issues = []
 
 
@@ -66,7 +68,7 @@ def audit():
 
         # ---- contraste (scanner linear) ----
         import sys as _s
-        _s.path.insert(0, '/workspace/scripts')
+        _s.path.insert(0, str(Path(__file__).resolve().parent))
         from css_contrast import analyze_contrast
         for x in analyze_contrast(c):
             add('MÉDIA', name, 'CONTRASTE',
@@ -157,9 +159,15 @@ def main():
     print('--- DETALHE (primeiros 40) ---')
     for i in issues[:40]:
         print(f"  [{i['sev']:8s}] {i['file']}:{i['line']} {i['cat']}: {i['msg'][:88]}")
-    Path('/workspace/avaliacao/07-documentacao/UX_A11Y_ANTES.json').write_text(
-        json.dumps(issues, ensure_ascii=False, indent=2), encoding='utf-8')
+    try:
+        AUDITORIA.mkdir(parents=True, exist_ok=True)
+        (AUDITORIA / 'UX_A11Y_ANTES.json').write_text(
+            json.dumps(issues, ensure_ascii=False, indent=2), encoding='utf-8')
+    except Exception as e:
+        print('(relatorio nao gravado:', e, ')')
 
 
 if __name__ == '__main__':
+    import sys as _s2
     main()
+    _s2.exit(1 if issues else 0)
