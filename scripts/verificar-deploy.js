@@ -29,11 +29,17 @@ const PAGINAS = [
 
 function get(url, redirects = 0) {
   return new Promise((resolve) => {
+    if (!/^https?:\/\//.test(url)) {
+      return resolve({ status: 0, body: '', type: '', err: 'URL invalida: ' + url });
+    }
     const mod = url.startsWith('https') ? https : http;
     const req = mod.get(url, { timeout: 20000 }, (res) => {
       if ([301, 302, 307, 308].includes(res.statusCode) && redirects < 5) {
         res.resume();
-        return resolve(get(res.headers.location, redirects + 1));
+        let loc = res.headers.location || '';
+        if (loc.startsWith('/')) loc = BASE + loc;   // redirect relativo
+        if (!loc) return resolve({ status: res.statusCode, body: '', type: '' });
+        return resolve(get(loc, redirects + 1));
       }
       let body = '';
       res.on('data', (d) => { body += d; });
