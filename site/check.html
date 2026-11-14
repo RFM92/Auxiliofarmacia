@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Diagnóstico Completo</title>
+<style>
+body { font-family: monospace; padding: 20px; background: #0a0e1a; color: #e2e8f0; line-height: 1.6; }
+.box { background: #1a2030; padding: 16px; margin: 12px 0; border-radius: 8px; border-left: 4px solid #14b8a6; }
+pre { background: #0a0e1a; padding: 12px; border-radius: 6px; word-break: break-all; white-space: pre-wrap; }
+.pass { color: #10b981; }
+.fail { color: #ef4444; }
+.warn { color: #fbbf24; }
+button { padding: 10px 20px; background: #14b8a6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 4px; font-weight: 600; }
+button.danger { background: #ef4444; }
+input { padding: 8px; margin: 4px; background: #1a2030; color: white; border: 1px solid #334155; border-radius: 6px; }
+</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Auxilio Farmacia - plataforma de apoio a prescricao e dispensacao farmaceutica para profissionais de saude no Brasil.">
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body id="conteudo-principal">
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+<h1>🔍 Diagnóstico de Login Entre Páginas</h1>
+
+<div class="box">
+<h2>1. Estado Atual do localStorage</h2>
+<pre id="state">Carregando...</pre>
+<button onclick="location.reload()">🔄 Atualizar</button>
+<button class="danger" onclick="clearAll()">🗑️ Limpar Tudo</button>
+</div>
+
+<div class="box">
+<h2>2. Criar Conta de Teste (manual, sem redirecionar)</h2>
+<input type="email" id="email" placeholder="email@teste.com" value="teste@x.com">
+<input type="text" id="pwd" placeholder="senha" value="123456">
+<button onclick="criar()">➕ Criar</button>
+<button onclick="login()">🔐 Login</button>
+<button onclick="verificar()">✅ Verificar</button>
+</div>
+
+<div class="box">
+<h2>Resultado das Operações:</h2>
+<pre id="log">Aguardando ação...</pre>
+</div>
+
+<div class="box">
+<h2>3. Teste de Navegação (com sessão)</h2>
+<p>Depois de fazer login acima, clique nos links abaixo para testar:</p>
+<a href="index.html" style="color: #14b8a6; margin: 4px;">→ index.html</a> |
+<a href="dashboard-auxfarmacia-FREE.html" style="color: #14b8a6; margin: 4px;">→ dashboard FREE</a> |
+<a href="dashboard-auxfarmacia.html" style="color: #14b8a6; margin: 4px;">→ dashboard master</a>
+</div>
+
+<script>
+// === HASH PWD (igual ao dashboard) ===
+function hashPwd(pwd) {
+  if (!pwd) return '';
+  if (pwd.startsWith('h_')) return pwd;
+  let hash = 0;
+  for (let i = 0; i < pwd.length; i++) {
+    hash = ((hash << 5) - hash) + pwd.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return 'h_' + Math.abs(hash).toString(36);
+}
+
+function log(msg, type) {
+  const r = document.getElementById('log');
+  const pre = document.createElement('pre');
+  pre.className = type || '';
+  pre.textContent = msg;
+  r.appendChild(pre);
+}
+
+function showState() {
+  const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  const session = JSON.parse(localStorage.getItem('auxf_session') || 'null');
+  
+  let html = '📦 auxf_users (' + Object.keys(users).length + ' usuários):\n';
+  html += JSON.stringify(users, null, 2) + '\n\n';
+  html += '🔑 auxf_session:\n';
+  html += JSON.stringify(session, null, 2);
+  
+  document.getElementById('state').textContent = html;
+}
+
+function clearAll() {
+  if (confirm('Limpar todo o localStorage?')) {
+    localStorage.clear();
+    document.getElementById('log').innerHTML = '<pre class="pass">✅ LocalStorage limpo</pre>';
+    showState();
+  }
+}
+
+function criar() {
+  document.getElementById('log').innerHTML = '';
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const pwd = document.getElementById('pwd').value;
+  
+  if (!email || !pwd) {
+    log('❌ Preencha email e senha', 'fail');
+    return;
+  }
+  
+  const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  users[email] = {
+    nome: 'Teste',
+    email: email,
+    profissao: '',
+    crm: '',
+    senha: hashPwd(pwd),
+    plano: 'free',
+    criado: new Date().toISOString(),
+    expira: null,
+    historico: []
+  };
+  localStorage.setItem('auxf_users', JSON.stringify(users));
+  log('✅ Usuário criado: ' + email, 'pass');
+  log('   Hash da senha: ' + hashPwd(pwd));
+  showState();
+}
+
+function login() {
+  document.getElementById('log').innerHTML = '';
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const pwd = document.getElementById('pwd').value;
+  
+  const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  const user = users[email];
+  
+  if (!user) {
+    log('❌ Usuário não encontrado', 'fail');
+    return;
+  }
+  
+  const pwdHash = hashPwd(pwd);
+  if (user.senha !== pwdHash) {
+    log('❌ Senha incorreta', 'fail');
+    log('   salva: ' + user.senha);
+    log('   calc:  ' + pwdHash);
+    return;
+  }
+  
+  // Salva sessão no formato do dashboard
+  localStorage.setItem('auxf_session', JSON.stringify({
+    email: email,
+    plano: user.plano || 'free',
+    expira: user.expira
+  }));
+  
+  log('✅ Login OK!', 'pass');
+  log('   Sessão salva: ' + JSON.stringify(JSON.parse(localStorage.getItem('auxf_session'))));
+  showState();
+}
+
+function verificar() {
+  document.getElementById('log').innerHTML = '';
+  const session = JSON.parse(localStorage.getItem('auxf_session') || 'null');
+  const users = JSON.parse(localStorage.getItem('auxf_users') || '{}');
+  
+  if (!session) {
+    log('❌ Nenhuma sessão salva', 'fail');
+    return;
+  }
+  
+  log('Sessão encontrada: ' + JSON.stringify(session));
+  const user = users[session.email];
+  if (!user) {
+    log('❌ Sessão aponta para usuário inexistente: ' + session.email, 'fail');
+    return;
+  }
+  
+  log('✅ Usuário existe: ' + user.email, 'pass');
+  log('✅ Plano: ' + user.plano, 'pass');
+  log('🎉 TUDO OK! Navegue para outras páginas e o login será mantido!', 'pass');
+}
+
+showState();
+</script>
+</body>
+</html>
