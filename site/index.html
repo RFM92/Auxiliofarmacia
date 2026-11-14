@@ -879,8 +879,11 @@ textarea:focus-visible {
           <a href="login.html#forgot">Esqueci minha senha</a>
         </div>
 
-        <div class="access-hint">
+        <div class="access-hint" id="accessHintDemo">
           <strong>Acesso de demonstração:</strong> use <code>admin@auxfarmacia.com.br</code> / <code>admin123</code>.<br>
+          Novos registros entram no plano <strong>FREE</strong> e podem ser atualizados a qualquer momento.
+        </div>
+        <div class="access-hint" id="accessHintProd" style="display:none;">
           Novos registros entram no plano <strong>FREE</strong> e podem ser atualizados a qualquer momento.
         </div>
       </form>
@@ -1280,6 +1283,21 @@ function showSuccess(msg) {
   document.getElementById('formError').style.display = 'none';
 }
 
+/**
+ * Leva o visitante ate o cartao de acesso unico (rolagem suave + foco).
+ * Chamado pelo botao "Entrar / Criar conta" do topo.
+ */
+function goAccessLogin() {
+  const card = document.getElementById('accessForm') || document.getElementById('accessGuest');
+  const email = document.getElementById('accessEmail');
+  if (card && card.scrollIntoView) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (email) {
+    setTimeout(() => { try { email.focus(); } catch (e) {} }, 350);
+  }
+}
+
 function doLogin() {
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value;
@@ -1417,6 +1435,7 @@ function doLogout() {
 // ============== INICIALIZAÇÃO ==============
 document.addEventListener('DOMContentLoaded', function() {
   updateUserArea();
+  toggleDemoHint();
   
   // Fecha modal com ESC
   document.addEventListener('keydown', function(e) {
@@ -1449,6 +1468,24 @@ function accessHash(pwd) {
     h = h & h;
   }
   return 'h_' + Math.abs(h).toString(36);
+}
+
+/**
+ * Esconde as credenciais de demonstracao quando o backend real esta no ar.
+ * Publicar 'admin/admin123' numa tela de producao seria uma falha de seguranca.
+ */
+function toggleDemoHint() {
+  const demo = document.getElementById('accessHintDemo');
+  const prod = document.getElementById('accessHintProd');
+  if (!demo || !prod) return;
+  const cfg = (typeof window.AUXF_CONFIG !== 'undefined') ? window.AUXF_CONFIG : {};
+  const base = (cfg && cfg.apiBase) ? String(cfg.apiBase) : '';
+  if (!base || base.indexOf('localhost') !== -1) return;   // dev: mantem o demo
+  const hide = () => { demo.style.display = 'none'; prod.style.display = 'block'; };
+  if (typeof fetch !== 'function') return;
+  fetch(base.replace(/\/$/, '') + '/api/health', { method: 'GET' })
+    .then((r) => { if (r.ok) hide(); })
+    .catch(() => {});   // backend fora do ar: mantem o aviso
 }
 
 function accessMsg(texto, tipo) {
@@ -1506,7 +1543,27 @@ function accessSaveSession(email, plano, expira, token, user) {
 
 function accessLoginLocal(email, pwd) {
   const users = accessGetUsers();
-  const u = users[email];
+  let u = users[email];
+
+  // Conta de demonstracao do admin: existe so localmente e so enquanto o
+  // backend real nao responde (o aviso dela some quando o backend sobe).
+  if (!u && email === 'admin@auxfarmacia.com.br') {
+    if (pwd !== 'admin123') {
+      return { ok: false, motivo: 'Senha incorreta. Se não lembrar, use "Esqueci minha senha".' };
+    }
+    u = {
+      nome: 'Administrador',
+      email: email,
+      senha: accessHash(pwd),
+      plano: 'enterprise',
+      role: 'admin',
+      expira: null,
+      demo: true
+    };
+    users[email] = u;
+    accessSetUsers(users);
+  }
+
   if (!u) return { ok: false, motivo: 'Conta não encontrada. Clique em "Criar conta" para se cadastrar.' };
   if (u.senha && u.senha !== accessHash(pwd)) {
     return { ok: false, motivo: 'Senha incorreta. Se não lembrar, use "Esqueci minha senha".' };
