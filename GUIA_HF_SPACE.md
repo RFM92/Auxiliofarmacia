@@ -3,168 +3,171 @@
 O backend (FastAPI + SQLite) precisa de um processo **sempre ligado** — por isso
 vai num Space com Docker, não no Pages.
 
-**Custo: grátis.** CPU básica persistente, sem suspensão.
+> **Nome do site sem nome pessoal:** crie a conta do Hugging Face com o
+> username **`auxiliofarmacia`** (está livre ✅) e o Space se chama **`api`**.
+> A URL final fica `https://auxiliofarmacia-api.hf.space` — **sem seu nome**.
+> O GitHub pode continuar no seu usuário: ele só aparece nos links de
+> download, que é normal em qualquer projeto open-source.
 
 ---
 
-## Passo 1 — Criar o Space
+## ⚠️ Antes de começar: o disco do HF grátis é EFÉMERO
 
-1. Acesse https://huggingface.co/new-space
-2. **Space name:** `auxilio-farmacia-api`
-3. **Space SDK:** **Docker**
-4. Licença: MIT
-5. Clique **Create Space**
-
-O Space abre com um `Dockerfile` e `README.md` de exemplo.
-
----
-
-## Passo 2 — Subir os arquivos
-
-O repositório já tem tudo pronto em `api/`. Dentro do Space, use a aba
-**Files** e suba:
-
-| Arquivo | Para quê |
+| | |
 |---|---|
-| `Dockerfile.hf` | → renomeie para **`Dockerfile`** |
-| `requirements.hf.txt` | → renomeie para **`requirements.txt`** |
-| `README.md` | mantém o frontmatter YAML (`sdk: docker`, `app_port: 7860`) |
-| `run.sh` | script de start (opcional, o Dockerfile já sobe o uvicorn) |
-| `api/` | toda a pasta do backend (routes, models, services, utils) |
+| Disco no plano grátis | 50 GB **efêmero** — **apagado a cada reinício** do Space |
+| Persistent storage | 20 GB = **US$ 5/mês** (100 GB = US$ 25/mês) |
+| Sleep | o Space CPU Basic **dorme** após um período sem uso |
 
-**Atalho:** baixe o `AuxilioFarmacia_REPO_GITHUB.zip`, extraia e use a pasta
-`api/` inteira.
+O Auxílio Farmácia guarda **usuários, licenças, auditoria e histórico de
+pagamentos** no SQLite. Em disco efêmero, **um reinício apaga tudo** — e
+com plano pago no Asaas, isso é inaceitável.
 
-### Estrutura final no Space
+### Escolha o seu caminho
+
+| Opção | Custo | Persistência | URL | Esforço |
+|---|---|---|---|---|
+| **A. HF + persistent storage** | US$ 5/mês | ✅ real | `auxiliofarmacia-api.hf.space` | baixo |
+| **B. Oracle Cloud Always Free** | **grátis** | ✅ real (200 GB) | IP ou domínio próprio | médio |
+| **C. Render (plano pago)** | ~US$ 7/mês | ✅ disco | `auxiliofarmacia-api.onrender.com` | baixo |
+| **D. HF grátis** | grátis | ❌ efêmero | `auxiliofarmacia-api.hf.space` | baixo |
+
+**Minha recomendação: A para começar** (5 dólares, zero configuração extra,
+URL limpa e o webhook do Asaas pronto em minutos). Se o custo incomodar, **B**
+é o melhor FREE de verdade — 4 CPUs ARM e 200 GB no Always Free da Oracle.
+
+Enquanto isso (opção D), o backend serve para **testar** — nunca para
+production com pagamento real.
+
+---
+
+## Passo 1 — Criar a conta no Hugging Face
+
+1. Acesse https://huggingface.co/join
+2. Username: **`auxiliofarmacia`** (ou `auxfarmacia`)
+3. Confirme o e-mail
+4. Crie um token em https://huggingface.co/settings/tokens
+   - **Role: `write`**
+   - Nome: `Auxilio Farmacia Deploy`
+
+---
+
+## Passo 2 — Publicar (automático)
+
+Com o token em mãos, **um comando faz tudo**:
+
+```bash
+HF_TOKEN=hf_xxx HF_USERNAME=auxiliofarmacia HF_SPACE=api \
+  node scripts/deploy-hf-space.js
+```
+
+Ele cria o Space, sobe a pasta `api/` (renomeando `Dockerfile.hf` →
+`Dockerfile` e `requirements.hf.txt` → `requirements.txt`) e escreve o
+`README.md` com o frontmatter do Docker.
+
+**Ou manualmente:** https://huggingface.co/new-space
+- Space name: `api`
+- SDK: **Docker**
+- Licença: MIT
+
+Depois suba a pasta `api/` inteira pela aba **Files**.
+
+---
+
+## Passo 3 — Secrets
+
+Na aba **Settings → Variables and secrets**:
+
+| Chave | Valor |
+|---|---|
+| `SECRET_KEY` | `openssl rand -hex 32` |
+| `ADMIN_DEFAULT_PASSWORD` | senha forte do admin |
+| `ASAAS_API_KEY` | do painel Asaas (sandbox ou produção) |
+| `ASAAS_ENVIRONMENT` | `sandbox` ou `production` |
+| `ASAAS_WEBHOOK_TOKEN` | string aleatória que você inventar |
+| `APP_CORS_ORIGINS` | `https://auxiliofarmacia.pages.dev` |
+| `APP_URL` | `https://auxiliofarmacia-api.hf.space` |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./data/auxfarmacia.db` |
+
+> ⚠️ `SECRET_KEY` e as chaves **nunca** entram no GitHub. Ficam só nos
+> secrets do Space.
+
+---
+
+## Passo 4 — Conferir
+
+```bash
+curl https://auxiliofarmacia-api.hf.space/api/health
+```
+
+Resposta esperada: `{"status":"ok", ...}`
+
+Docs interativos: `https://auxiliofarmacia-api.hf.space/api/docs`
+
+---
+
+## Passo 5 — Apontar o frontend
+
+Edite `site/config.js` (única linha):
+
+```js
+apiBase: 'https://auxiliofarmacia-api.hf.space',
+```
+
+```bash
+git add -A && git commit -m "chore: apiBase do backend em producao" && git push
+```
+
+O Cloudflare Pages redeploya em segundos.
+
+---
+
+## Passo 6 — Webhook do Asaas (precisa de URL fixa)
+
+No painel Asaas → **Configurações → Webhooks**:
+
+| Campo | Valor |
+|---|---|
+| URL | `https://auxiliofarmacia-api.hf.space/api/payments/webhook/asaas` |
+| Token | o mesmo valor de `ASAAS_WEBHOOK_TOKEN` |
+| Eventos | `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED`, `PAYMENT_OVERDUE`, `PAYMENT_REFUNDED` |
+
+> A URL precisa ser **fixa e pública** — o tunnel `trycloudflare.com` morre
+> a cada reinício do sandbox e o webhook deixaria de funcionar.
+
+---
+
+## Passo 7 — CORS
+
+O backend precisa aceitar o domínio do frontend. Em `APP_CORS_ORIGINS`:
+
+```
+https://auxiliofarmacia.pages.dev
+```
+
+Se você criar um domínio próprio depois, acrescente com vírgula.
+
+---
+
+## Estrutura do Space
+
 ```
 .
 ├── Dockerfile          (era Dockerfile.hf)
 ├── requirements.txt    (era requirements.hf.txt)
-├── README.md
+├── README.md           (frontmatter: sdk: docker, app_port: 7860)
+├── run.sh
 └── api/
-    ├── __init__.py
     ├── main.py
     ├── config.py
     ├── database.py
-    ├── dependencies.py
-    ├── schemas.py
-    ├── models/
     ├── routes/
     ├── services/
+    ├── models/
+    ├── schemas.py
     └── utils/
 ```
 
-> ⚠️ **Atenção ao `api/`:** dentro do Space, o backend fica em `/app/api/`,
-> e o comando é `uvicorn api.main:app`. O `Dockerfile.hf` já faz `COPY . .`
-> a partir da raiz do Space — então a pasta `api/` precisa estar **na raiz
-> do Space**, não dentro de outra pasta.
-
----
-
-## Passo 3 — Variáveis e segredos
-
-**Settings → Variables and secrets → New variable**
-
-| Nome | Tipo | Valor |
-|---|---|---|
-| `SECRET_KEY` | **Secret** | string forte e aleatória (mín. 32 chars) |
-| `ADMIN_DEFAULT_PASSWORD` | **Secret** | senha do admin (TROQUE!) |
-| `ASAAS_API_KEY` | **Secret** | `$aact_prod_…` ou `$aact_hmlg_…` |
-| `ASAAS_ENVIRONMENT` | Variable | `production` ou `sandbox` |
-| `ASAAS_WEBHOOK_TOKEN` | **Secret** | o mesmo configurado no webhook do Asaas |
-| `STRIPE_SECRET_KEY` | **Secret** | opcional (fallback) |
-| `STRIPE_WEBHOOK_SECRET` | **Secret** | opcional (fallback) |
-| `APP_CORS_ORIGINS` | Variable | `["https://auxilio-farmacia.pages.dev"]` |
-| `APP_URL` | Variable | `https://auxilio-farmacia.pages.dev` |
-| `APP_ENV` | Variable | `production` |
-
-**Gerar um SECRET_KEY forte:**
-```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(48))"
-```
-
----
-
-## Passo 4 — Persistent storage (OBRIGRATÓRIO)
-
-**Settings → Persistent storage → Enable**
-
-Sem isso o SQLite é apagado a cada restart e as licenses somem.
-
-O `Dockerfile.hf` já cria `/app/data` e o `DATABASE_URL` aponta para lá:
-```
-DATABASE_URL=sqlite+aiosqlite:///./data/auxfarmacia.db
-```
-
----
-
-## Passo 5 — Build
-
-O Space constrói sozinho (~3-5 min). Acompanhe na aba **Build**.
-
-Quando terminar, a URL será:
-```
-https://SEU_USUARIO-auxilio-farmacia-api.hf.space
-```
-
-Teste:
-```bash
-curl https://SEU_USUARIO-auxilio-farmacia-api.hf.space/docs
-```
-
----
-
-## Passo 6 — Apontar o frontend para a API
-
-No repositório GitHub, edite `site/config.js`:
-
-```js
-window.AUXF_CONFIG = {
-  apiBase: 'https://SEU_USUARIO-auxilio-farmacia-api.hf.space',
-};
-```
-
-Commit + push → o Cloudflare Pages faz o deploy automático (1-2 min).
-
----
-
-## Passo 7 — Webhook do Asaas
-
-Agora a URL da API é **fixa** 🎉
-
-**Painel Asaas → Integração → Webhooks:**
-- Eventos: `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED`, `PAYMENT_OVERDUE`, `PAYMENT_REFUNDED`
-- Tipo: `AUTOMATIC`
-- URL: `https://SEU_USUARIO-auxilio-farmacia-api.hf.space/api/payments/webhook/asaas`
-- Token: o mesmo valor de `ASAAS_WEBHOOK_TOKEN`
-
----
-
-## ⚠️ Limitações do Space (saiba antes)
-
-| Limite | Impacto |
-|---|---|
-| CPU básica (2 vCPU) | API com poucos usuários simultâneos — ok para começar |
-| 16 GB de disco | SQLite cabe folgado |
-| Hiberna após 48h sem uso | pode demorar ~30s para acordar na 1ª visita |
-| Sem HTTPS customizado | a URL já é HTTPS (`hf.space`) ✓ |
-| Subdomínio `*.hf.space` | sem problema |
-
-Para escalar depois: Render (plano pago) ou Oracle Cloud Always Free (2 VMs).
-
----
-
-## Checklist
-
-- [ ] Space criado com SDK Docker
-- [ ] `Dockerfile` (do `Dockerfile.hf`) na raiz
-- [ ] `requirements.txt` (do `requirements.hf.txt`) na raiz
-- [ ] pasta `api/` na raiz do Space
-- [ ] `SECRET_KEY` forte e único
-- [ ] `ADMIN_DEFAULT_PASSWORD` trocada
-- [ ] Persistent storage **ativado**
-- [ ] Build concluído sem erro
-- [ ] `/docs` responde 200
-- [ ] `config.js` apontando para a URL do Space
-- [ ] `APP_CORS_ORIGINS` com o domínio do frontend
-- [ ] Webhook do Asaas cadastrado
+O `Dockerfile` já cria o usuário sem privilégios, monta o SQLite em
+`/app/data` (é onde o persistent storage do HF é montado) e sobe o uvicorn
+na porta `${PORT:-7860}`.
