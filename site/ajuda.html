@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Ajuda - Auxílio Farmácia</title>
+<meta name="description" content="Central de ajuda do Auxílio Farmácia - FAQ, guias, tutoriais">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  header {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: white;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 32px; margin-bottom: 8px; }
+  header p { opacity: 0.9; }
+  .breadcrumb { padding: 16px 0; font-size: 14px; color: #64748b; }
+  .breadcrumb a { color: #0f766e; text-decoration: none; }
+  h2 { color: #0f766e; margin: 32px 0 16px; font-size: 22px; }
+  h3 { color: #1e293b; margin: 20px 0 10px; font-size: 17px; }
+  p { margin-bottom: 12px; }
+  .faq-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .faq-question {
+    background: #f8fafc;
+    padding: 14px 18px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .faq-question:hover { background: #f0fdfa; }
+  .faq-answer {
+    padding: 0 18px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s, padding 0.3s;
+  }
+  .faq-answer.open {
+    padding: 14px 18px;
+    max-height: 500px;
+  }
+  .faq-toggle { font-size: 20px; color: #0f766e; }
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .quick-link {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    text-decoration: none;
+    color: #1e293b;
+    transition: all 0.2s;
+  }
+  .quick-link:hover {
+    border-color: #14b8a6;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.1);
+  }
+  .quick-link-icon { font-size: 32px; margin-bottom: 8px; }
+  .quick-link-text { font-weight: 600; }
+  .back-link {
+    display: inline-block;
+    background: #0f766e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin: 24px 0;
+    font-weight: 600;
+  }
+  .back-link:hover { background: #0d9488; }
+</style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<header>
+  <h1>🆘 Central de Ajuda</h1>
+  <p>Perguntas frequentes, guias e tutoriais</p>
+</header>
+
+<div class="container" id="conteudo-principal">
+  <p class="breadcrumb">
+    <a href="index.html">← Voltar ao início</a>
+  </p>
+
+  <h2>🚀 Acesso Rápido</h2>
+  <div class="quick-links">
+    <a href="dashboard-auxfarmacia-FREE.html" class="quick-link">
+      <div class="quick-link-icon">🆓</div>
+      <div class="quick-link-text">Dashboard FREE</div>
+    </a>
+    <a href="admin.html" class="quick-link">
+      <div class="quick-link-icon">🎛️</div>
+      <div class="quick-link-text">Painel Admin</div>
+    </a>
+    <a href="checkout.html" class="quick-link">
+      <div class="quick-link-icon">💳</div>
+      <div class="quick-link-text">Checkout</div>
+    </a>
+    <a href="contato.html" class="quick-link">
+      <div class="quick-link-icon">📧</div>
+      <div class="quick-link-text">Contato</div>
+    </a>
+  </div>
+
+  <h2>❓ Perguntas Frequentes (FAQ)</h2>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      O que é o Auxílio Farmácia?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      O Auxílio Farmácia é uma plataforma educacional para profissionais de farmácias, drogarias e atenção primária à saúde. Oferece informações sobre 61 medicamentos, 10 Classes terapêuticas, 9 calculadoras, 2 cursos completos e 7 módulos educacionais.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Quanto custa?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Temos 4 planos: <strong>FREE</strong> (grátis, 30% dos recursos), <strong>PRO</strong> (R$ 29,90/mês, todos medicamentos + interações), <strong>PREMIUM</strong> (R$ 79,90/mês, tudo + cursos + certificado) e <strong>ENTERPRISE</strong> (R$ 297/mês, para instituições).
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Como funciona o sistema de dispositivos (antipirataria)?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Usamos <strong>device fingerprint</strong> (hash SHA-256 do seu navegador + tela + canvas). Cada plano tem limite: PRO = 2 devices, PREMIUM = 3, ENTERPRISE = 50. Se exceder, faça login no painel admin ou contate o suporte.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Posso usar offline?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Sim! O dashboard é um arquivo HTML único que funciona 100% offline após primeiro carregamento. Apenas os vídeos do YouTube e fontes Google precisam de internet na primeira vez.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Os certificados são válidos?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Os certificados digitais são <strong>válidos para horas complementares</strong> em faculdades de farmácia, mas não substituem certificados de cursos técnicos reconhecidos pelo MEC. Para certificação profissional formal, procure cursos técnicos profissionalizantes.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Posso usar o conteúdo para vender?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      <strong>Não.</strong> O conteúdo é protegido por direitos autorais. Pode usar para consulta pessoal/profissional, mas é proibida a reprodução, distribuição ou uso comercial sem autorização. Veja nossos <a href="termos.html">Termos de Uso</a>.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Como cancelar a assinatura?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Você pode cancelar a qualquer momento no painel da sua conta, sem multa. O acesso continua até o fim do período pago. Após cancelar, sua conta volta automaticamente ao plano FREE.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div role="button" tabindex="0" class="faq-question" onclick="toggleFaq(this)">
+      Tem aplicativo mobile?
+      <span class="faq-toggle">+</span>
+    </div>
+    <div class="faq-answer">
+      Por enquanto, a plataforma é PWA (Progressive Web App). Você pode "instalar" no celular: abra no Chrome/Safari, clique em "Adicionar à tela inicial". App nativo (Android/iOS) está planejado para a versão 2026.11.
+    </div>
+  </div>
+
+  <h2>📚 Guias Rápidos</h2>
+
+  <h3>Para Farmacêuticos</h3>
+  <ul style="margin-left:24px; margin-bottom:16px;">
+    <li><a href="dashboard-auxfarmacia-FREE.html">Dashboard FREE</a> — comece aqui</li>
+    <li>Use a busca para encontrar medicamentos</li>
+    <li>Consulte calculadoras para doses pediátricas</li>
+    <li>Acesse o painel admin (se você é admin)</li>
+  </ul>
+
+  <h3>Para Balconistas</h3>
+  <ul style="margin-left:24px; margin-bottom:16px;">
+    <li><a href="dashboard-auxfarmacia-FREE.html">Dashboard FREE</a> — 30% dos medicamentos</li>
+    <li>Use calculadoras para conversões</li>
+    <li>Verifique interações medicamentosas</li>
+  </ul>
+
+  <h3>Para Estudantes</h3>
+  <ul style="margin-left:24px; margin-bottom:16px;">
+    <li><a href="dashboard-auxfarmacia-educativo.html">Dashboard Educativo</a> — foco educacional</li>
+    <li>Faça o curso de Anti-hipertensivos (12 semanas)</li>
+    <li>Estude com flashcards e quizzes</li>
+    <li>Receba certificado digital</li>
+  </ul>
+
+  <h2>🐛 Problemas Comuns</h2>
+
+  <h3>O dashboard está lento</h3>
+  <p>
+    O dashboard tem ~1MB. No primeiro carregamento, pode demorar. Após isso, o navegador cacheia.
+    Se persistir, tente limpar o cache ou usar outro navegador.
+  </p>
+
+  <h3>Login não funciona</h3>
+  <p>
+    Verifique se está usando o e-mail correto. Senha tem no mínimo 6 caracteres. Se esqueceu,
+    use a opção "Esqueci minha senha".
+  </p>
+
+  <h3>Vídeos não carregam</h3>
+  <p>
+    Verifique sua conexão com a internet. Os vídeos são do YouTube e podem estar bloqueados
+    em algumas redes corporativas. Tente em outra rede.
+  </p>
+
+  <h3>Curso não abre</h3>
+  <p>
+    Certifique-se de que está logado e tem plano PREMIUM ou superior. O botão "▶ Assistir"
+    só aparece para esses planos.
+  </p>
+
+  <h2>📞 Ainda precisa de ajuda?</h2>
+  <p>
+    Entre em contato conosco:
+  </p>
+  <ul style="margin-left:24px;">
+    <li><a href="contato.html">Formulário de contato</a></li>
+    <li><strong>E-mail:</strong> suporte@auxfarmacia.com.br</li>
+    <li><strong>Telefone:</strong> +55 (11) 9999-9999</li>
+    <li><strong>Horário:</strong> Seg-Sex, 9h-18h (BRT)</li>
+  </ul>
+
+  <a href="index.html" class="back-link">← Voltar ao Início</a>
+</div>
+
+<script>
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const toggle = el.querySelector('.faq-toggle');
+  if (answer.classList.contains('open')) {
+    answer.classList.remove('open');
+    toggle.textContent = '+';
+  } else {
+    answer.classList.add('open');
+    toggle.textContent = '−';
+  }
+}
+</script>
+
+</body>
+</html>
