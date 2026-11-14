@@ -82,7 +82,10 @@ function get(url, redirects = 0) {
   console.log(`\n--- /config.js ---`);
   const cfg = await get(BASE + '/config.js');
   if (cfg.status === 200) {
-    const m = cfg.body.match(/apiBase:\s*'([^']*)'/);
+    // remove os comentarios /* */ (contem exemplos de apiBase que nao valem)
+    const limpo = cfg.body.replace(/\/\*[\s\S]*?\*\//g, '');
+    const bloco = limpo.match(/window\.AUXF_CONFIG\s*=\s*\{([\s\S]*?)\n\};/);
+    const m = bloco && bloco[1].match(/apiBase:\s*'([^']*)'/);
     console.log(`  apiBase = ${m ? m[1] : '(não encontrado)'}`);
     const api = m && m[1];
     if (api) {
