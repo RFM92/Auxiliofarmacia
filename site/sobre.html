@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre - Auxílio Farmácia</title>
+<meta name="description" content="Sobre o Auxílio Farmácia - nossa missão, história e equipe">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+  header {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: white;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 32px; margin-bottom: 8px; }
+  header p { opacity: 0.9; }
+  .breadcrumb { padding: 16px 0; font-size: 14px; color: #64748b; }
+  .breadcrumb a { color: #0f766e; text-decoration: none; }
+  h2 { color: #0f766e; margin: 32px 0 16px; font-size: 22px; }
+  h3 { color: #1e293b; margin: 24px 0 12px; font-size: 18px; }
+  p { margin-bottom: 16px; }
+  .info-box {
+    background: #f0fdfa;
+    border-left: 4px solid #14b8a6;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .back-link {
+    display: inline-block;
+    background: #0f766e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin: 24px 0;
+    font-weight: 600;
+  }
+  .back-link:hover { background: #0d9488; }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-value { font-size: 28px; font-weight: 700; color: #ffffff; }
+  .stat-label { font-size: 12px; color: #ffffff; margin-top: 4px; }
+  .timeline {
+    border-left: 3px solid #14b8a6;
+    padding-left: 24px;
+    margin: 20px 0;
+  }
+  .timeline-item { margin-bottom: 24px; }
+  .timeline-year { font-weight: 700; color: #0f766e; }
+</style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<header>
+  <h1>ℹ️ Sobre o Auxílio Farmácia</h1>
+  <p>Nossa missão, história e valores</p>
+</header>
+
+<div class="container" id="conteudo-principal">
+  <p class="breadcrumb">
+    <a href="index.html">← Voltar ao início</a>
+  </p>
+
+  <h2>Nossa Missão</h2>
+  <div class="info-box">
+    <strong>Democratizar o acesso à informação farmacêutica confiável, didática e acessível</strong>
+    para profissionais de farmácias, drogarias e atenção primária à saúde em todo o Brasil.
+  </div>
+
+  <h2>Nossa Visão</h2>
+  <p>
+    Ser a principal plataforma de consulta farmacêutica do Brasil, presente em todas
+    as 88.000 farmácias e 70.000 drogarias do país até 2030.
+  </p>
+
+  <h2>Estatísticas</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value">61</div><div class="stat-label">Medicamentos</div></div>
+    <div class="stat-card"><div class="stat-value">10</div><div class="stat-label">Classes Terapêuticas</div></div>
+    <div class="stat-card"><div class="stat-value">9</div><div class="stat-label">Calculadoras</div></div>
+    <div class="stat-card"><div class="stat-value">7</div><div class="stat-label">Módulos Educacionais</div></div>
+    <div class="stat-card"><div class="stat-value">2</div><div class="stat-label">Cursos Completos</div></div>
+    <div class="stat-card"><div class="stat-value">11</div><div class="stat-label">Vídeos Educacionais</div></div>
+  </div>
+
+  <h2>Nossos Valores</h2>
+  <ul>
+    <li><strong>Rigor científico</strong> — todas as informações baseadas em bulas oficiais da Anvisa</li>
+    <li><strong>Didática acessível</strong> — linguagem clara, mnemônicos, exemplos práticos</li>
+    <li><strong>Atualização constante</strong> — releases mensais com novo conteúdo</li>
+    <li><strong>Ética farmacêutica</strong> — conteúdo educativo, não substitui profissional</li>
+    <li><strong>Foco no usuário final</strong> — balconista, farmacêutico, técnico, estudante</li>
+  </ul>
+
+  <h2>História</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-year">2025 — V1.0 (Cálculo Pediátrico)</div>
+      <p>Lançamento do "PedDose" como calculadora pediátrica de posologia. Foco em pediatria, com bulas de 122 medicamentos.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V2.0 (Calculadoras Clínicas)</div>
+      <p>Adição de calculadoras clínicas, puericultura, fluxogramas e módulo de prescrição. Expansão do escopo.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V3.0 (PWA + Z-score)</div>
+      <p>Transformação em PWA, adição de calculadoras avançadas, Z-score, casos clínicos, interações medicamentosas.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V4.0 (Drogaria + Comparador)</div>
+      <p>Expansão para 30+ medicamentos de drogaria + comparador de classes detalhado.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V5.0 (Mapas Mentais + Árvores)</div>
+      <p>Adição de mapas mentais SVG, árvores de decisão, espectros, flashcards, linha do tempo.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V6.0 (Temas + Onboarding)</div>
+      <p>6 temas customizáveis, 3D tilt, sparkles, onboarding interativo, easter egg Konami.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V7.0 (Trilha + Gamificação)</div>
+      <p>Trilha de aprendizado 12 semanas, 3 níveis, quiz interativo, certificado digital, cronograma, ranking.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V8.0 (Licenciamento + Paywall)</div>
+      <p>Sistema de licenciamento com chave AUXFARMA, paywall, 4 builds, landing, checkout, telemetria.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V9.0 (Backend + Admin)</div>
+      <p>Backend FastAPI completo (38 endpoints, 4 models, JWT, bcrypt, fingerprint, Stripe+Asaas, 6 emails, Docker).</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — Rebrand: Auxílio Farmácia</div>
+      <p>Renomeação de PedDose para Auxílio Farmácia, refletindo o escopo adulto+pediátrico e ambulatorial.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V2026.07 (Atual)</div>
+      <p>Remoção de 4 medicamentos hospitalares (Meropenem, Vancomicina IV, Adrenalina, Ceftriaxona) para foco 100% ambulatorial. <strong>61 medicamentos</strong> restantes.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2026 — V2026.08 (Atual)</div>
+      <p>Auditoria completa, correção de bug crítico em <code>expandirMedicamentos()</code>, scroll natural, links reais para termos/privacidade.</p>
+    </div>
+  </div>
+
+  <h2>Equipe</h2>
+  <p>
+    O Auxílio Farmácia é mantido por uma equipe multidisciplinar:
+  </p>
+  <ul>
+    <li><strong>1 Farmacêutico Clínico</strong> (revisão de conteúdo)</li>
+    <li><strong>1 Desenvolvedor Full-Stack</strong> (engenharia)</li>
+    <li><strong>1 Designer UX/UI</strong> (experiência do usuário)</li>
+  </ul>
+
+  <h2>Reconhecimentos</h2>
+  <p>Conteúdo baseado em:</p>
+  <ul>
+    <li>Bulas oficiais da <strong>Anvisa</strong></li>
+    <li>Diretrizes da <strong>Sociedade Brasileira de Cardiologia (SBC)</strong></li>
+    <li>Protocolos do <strong>PALS 2020</strong> (pediatria)</li>
+    <li>Guias da <strong>SBD</strong> (Sociedade Brasileira de Diabetes)</li>
+    <li>UpToDate, Sanford Guide, Harrison's</li>
+  </ul>
+
+  <h2>Contato</h2>
+  <p>Para sugestões, parcerias ou dúvidas:</p>
+  <ul>
+    <li><strong>E-mail:</strong> contato@auxfarmacia.com.br</li>
+    <li><strong>Suporte:</strong> suporte@auxfarmacia.com.br</li>
+    <li><strong>Imprensa:</strong> imprensa@auxfarmacia.com.br</li>
+  </ul>
+
+  <a href="index.html" class="back-link">← Voltar ao Início</a>
+</div>
+
+</body>
+</html>
