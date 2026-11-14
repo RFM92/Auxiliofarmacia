@@ -4,7 +4,7 @@ REM  Auxilio Farmacia - publicacao no GitHub (Windows)
 REM  Rode dentro da pasta do repositorio
 REM ============================================================
 setlocal
-set GITHUB_USER=raphaelmenossi-maker
+set GITHUB_USER=RFM92
 set GITHUB_REPO=Auxiliofarmacia
 
 echo.
