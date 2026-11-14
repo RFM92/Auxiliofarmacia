@@ -1,0 +1,30 @@
+# ============================================================
+# Auxílio Farmácia — Backend para Hugging Face Spaces (Docker)
+# O Space injeta a variavel de ambiente PORT (padrao 7860)
+# ============================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=7860 \
+    DATABASE_URL=sqlite+aiosqlite:///./data/auxfarmacia.db
+
+# Cria o usuario sem privilegios (o Space roda como root por padrao)
+RUN useradd -m -u 1000 auxfarmacia
+
+COPY requirements.hf.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirements.hf.txt
+
+COPY . .
+
+# Pasta do SQLite (persistent storage do Space monta aqui)
+RUN mkdir -p /app/data && chown -R auxfarmacia:auxfarmacia /app/data /app
+USER auxfarmacia
+
+EXPOSE 7860
+
+# Sobe a API na porta do Space
+CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
