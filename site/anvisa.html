@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANVISA - Bulário Eletrônico - Auxílio Farmácia</title>
+<meta name="description" content="Links oficiais para o Bulário Eletrônico da ANVISA, consultas de medicamentos registrados e bulas em PDF">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  header {
+    background: linear-gradient(135deg, #1351b4, #0d3878);
+    color: white;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 32px; margin-bottom: 8px; }
+  header p { opacity: 0.9; }
+  .breadcrumb { padding: 16px 0; font-size: 14px; color: #64748b; }
+  .breadcrumb a { color: #0f766e; text-decoration: none; }
+  h2 { color: #1351b4; margin: 32px 0 16px; font-size: 22px; border-bottom: 2px solid #1351b4; padding-bottom: 8px; }
+  h3 { color: #1e293b; margin: 20px 0 10px; font-size: 17px; }
+  p { margin-bottom: 12px; }
+  .link-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .link-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: #1e293b;
+    display: block;
+  }
+  .link-card:hover {
+    border-color: #1351b4;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(19, 81, 180, 0.1);
+  }
+  .link-card strong { color: #1351b4; display: block; margin-bottom: 4px; }
+  .link-card small { color: #64748b; font-size: 12px; }
+  .link-card .url { color: #94a3b8; font-size: 11px; margin-top: 4px; word-break: break-all; }
+  .info-box {
+    background: #dbeafe;
+    border-left: 4px solid #1351b4;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .warning-box {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .back-link {
+    display: inline-block;
+    background: #0f766e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin: 24px 0;
+    font-weight: 600;
+  }
+  .back-link:hover { background: #0d9488; }
+  .status-ok { color: #ffffff; font-weight: 600; }
+  .section-desc { color: #ffffff; font-size: 14px; margin-bottom: 16px; }
+</style>
+
+<style>
+/* === ACESSIBILIDADE: skip-link + foco visivel === */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999999;
+  background: #031f1c;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+#conteudo-principal {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#conteudo-principal" class="skip-link">Pular para o conteúdo principal</a>
+
+
+<header>
+  <h1>🏛️ ANVISA - Bulário Eletrônico</h1>
+  <p>Links oficiais para bulas e consultas de medicamentos</p>
+</header>
+
+<div class="container" id="conteudo-principal">
+  <p class="breadcrumb">
+    <a href="index.html">← Voltar ao início</a>
+  </p>
+
+  <div class="info-box">
+    <strong>ℹ️ Sobre esta página:</strong> A ANVISA (Agência Nacional de Vigilância Sanitária)
+    é o orgão regulador de medicamentos no Brasil. Aqui você encontra os links oficiais para consultar
+    bulas de medicamentos registrados. <span class="status-ok">✓ Todos os links foram validados em 23/07/2026.</span>
+  </div>
+
+  <h2>📋 Bulário Eletrônico (Principal)</h2>
+  <p class="section-desc">
+    O Bulário Eletrônico é a base de dados oficial com todas as bulas de medicamentos registrados no Brasil.
+    Permite busca por nome do medicamento, princípio ativo ou empresa registrante.
+  </p>
+
+  <div class="link-grid">
+    <a href="https://www.gov.br/anvisa/pt-br/sistemas/bulario-eletronico" target="_blank" rel="noopener" class="link-card">
+      <strong>📖 Bulário Eletrônico (Oficial)</strong>
+      <small>Pesquisa de bulas por medicamento ou princípio ativo</small>
+      <div class="url">gov.br/anvisa/.../bulario-eletronico</div>
+    </a>
+
+    <a href="https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/bulas-e-rotulos/como-acessar-o-bulario-eletronico" target="_blank" rel="noopener" class="link-card">
+      <strong>📚 Como acessar o Bulário</strong>
+      <small>Tutorial oficial de uso do Bulário Eletrônico</small>
+      <div class="url">gov.br/anvisa/.../como-acessar-o-bulario-eletronico</div>
+    </a>
+
+    <a href="https://consultas.anvisa.gov.br/" target="_blank" rel="noopener" class="link-card">
+      <strong>🔍 Consultas ANVISA</strong>
+      <small>Consulta de medicamentos registrados</small>
+      <div class="url">consultas.anvisa.gov.br</div>
+    </a>
+  </div>
+
+  <h2>📑 Bulas Específicas (PDF)</h2>
+  <p class="section-desc">
+    Bulas oficiais em PDF dos medicamentos mais usados. Os links são do servidor
+    <code>bula-anvisa.s3.sa-east-1.amazonaws.com</code> e podem ser atualizados pela ANVISA.
+  </p>
+
+  <div class="link-grid">
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/105730558_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Amoxicilina suspensão</strong>
+      <small>Antibiótico pediátrico de primeira linha</small>
+      <div class="url">bula-anvisa.s3.../105730558_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/105730622_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Dipirona gotas</strong>
+      <small>Analgésico e antitérmico</small>
+      <div class="url">bula-anvisa.s3.../105730622_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/103700520_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Cetirizina solução oral</strong>
+      <small>Anti-histamínico 2ª geração</small>
+      <div class="url">bula-anvisa.s3.../103700520_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/1438100900011_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Loratadina xarope</strong>
+      <small>Anti-histamínico não-sedativo</small>
+      <div class="url">bula-anvisa.s3.../1438100900011_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/1023505150020_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Dexametasona elixir</strong>
+      <small>Corticosteroide oral</small>
+      <div class="url">bula-anvisa.s3.../1023505150020_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/1057306090022_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Azitromicina pó para suspensão</strong>
+      <small>Macrolídeo pediátrico</small>
+      <div class="url">bula-anvisa.s3.../1057306090022_paciente.pdf</div>
+    </a>
+
+    <a href="https://bula-anvisa.s3.sa-east-1.amazonaws.com/103700482_paciente.pdf" target="_blank" rel="noopener" class="link-card">
+      <strong>Paracetamol solução oral</strong>
+      <small>Analgésico e antitérmico</small>
+      <div class="url">bula-anvisa.s3.../103700482_paciente.pdf</div>
+    </a>
+  </div>
+
+  <h2>📜 Legislações e Normas</h2>
+  <p class="section-desc">
+    Documentos regulatórios importantes para profissionais de saúde.
+  </p>
+
+  <div class="link-grid">
+    <a href="https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/controlados/antimicrobianos" target="_blank" rel="noopener" class="link-card">
+      <strong>📋 RDC 20/2011</strong>
+      <small>Antimicrobianos com retenção de receita</small>
+      <div class="url">bvsms.saude.gov.br/.../rdc0020_05_05_2011.html</div>
+    </a>
+
+    <a href="https://www.gov.br/anvisa/pt-br/assuntos/fiscalizacao-e-monitoramento/propaganda/propaganda" target="_blank" rel="noopener" class="link-card">
+      <strong>📢 Propaganda de Medicamentos</strong>
+      <small>Regras brasileiras de propaganda</small>
+      <div class="url">gov.br/anvisa/.../propaganda</div>
+    </a>
+
+    <a href="https://www.gov.br/anvisa/pt-br/sistemas" target="_blank" rel="noopener" class="link-card">
+      <strong>⚙️ Sistemas ANVISA</strong>
+      <small>Lista completa de sistemas disponíveis</small>
+      <div class="url">gov.br/anvisa/pt-br/sistemas</div>
+    </a>
+  </div>
+
+  <h2>⚠️ Aviso Importante</h2>
+  <div class="warning-box">
+    <strong>📌 Sobre os links externos:</strong>
+    <ul style="margin-top:8px; margin-left:20px;">
+      <li>Os links para <code>gov.br/anvisa</code> e <code>consultas.anvisa.gov.br</code> são oficiais e validados</li>
+      <li>Os links para <code>bula-anvisa.s3.sa-east-1.amazonaws.com</code> podem mudar sem aviso (a ANVISA atualiza periodicamente)</li>
+      <li>Se algum link estiver quebrado, use o <strong>Bulário Eletrônico</strong> principal para buscar pelo nome do medicamento</li>
+      <li>Esta página é apenas um atalho — a ANVISA é a fonte oficial</li>
+    </ul>
+  </div>
+
+  <h2>🔧 Quando um Link Está Quebrado</h2>
+  <p>Se ao clicar em "Bulas ANVISA" no rodapé da plataforma o link não funcionar:</p>
+  <ol style="margin-left:24px; margin-bottom:16px;">
+    <li>Você verá esta página (anvisa.html) com links alternativos</li>
+    <li>Use o link "Bulário Eletrônico (Oficial)" — sempre atualizado</li>
+    <li>Ou pesquise diretamente em <code>consultas.anvisa.gov.br</code></li>
+    <li>Reporte o link quebrado em <a href="contato.html">contato</a></li>
+  </ol>
+
+  <a href="index.html" class="back-link">← Voltar ao Início</a>
+</div>
+
+</body>
+</html>
