@@ -85,7 +85,7 @@ Na aba **Settings → Variables and secrets**:
 | `ASAAS_API_KEY` | do painel Asaas (sandbox ou produção) |
 | `ASAAS_ENVIRONMENT` | `sandbox` ou `production` |
 | `ASAAS_WEBHOOK_TOKEN` | string aleatória que você inventar |
-| `APP_CORS_ORIGINS` | `https://auxiliofarmacia.pages.dev` |
+| `APP_CORS_ORIGINS` | `https://auxilio-farmacia.pages.dev` |
 | `APP_URL` | `https://auxiliofarmacia-api.hf.space` |
 | `DATABASE_URL` | `sqlite+aiosqlite:////data/auxfarmacia.db` (persistent storage) |
 | `OUTPUT_DIR` | `/app/output` (PDFs/ZIPs dos downloads) |
