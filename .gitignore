@@ -31,6 +31,9 @@ npm-debug.log*
 dist/
 build/
 *.zip
+
+# ...exceto os pacotes publicos da central de downloads
+!site/download/*.zip
 !*.zip.manifest
 
 # ---- SISTEMA ----
@@ -44,3 +47,6 @@ Thumbs.db
 # ---- GITHUB PAGES ----
 _site/
 .jekyll-cache/
+
+# Arquivos restritos servidos so pela API (Manual do Admin, ZIPs completos)
+api/output/
