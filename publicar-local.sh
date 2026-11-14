@@ -8,7 +8,7 @@
 # ===================================================================
 set -euo pipefail
 
-USUARIO="${GITHUB_USER:-raphaelmenossi-maker}"
+USUARIO="${GITHUB_USER:-RFM92}"
 REPO="${GITHUB_REPO:-Auxiliofarmacia}"
 PASTA="$(cd "$(dirname "$0")" && pwd)"
 
