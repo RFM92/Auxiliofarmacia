@@ -1,0 +1,12 @@
+# ============================================================
+# Configuracao do Cloudflare PAGES (Direct Upload)
+#
+# Usado por scripts/deploy-cloudflare.js:
+#   CLOUDFLARE_API_TOKEN=xxx node scripts/deploy-cloudflare.js
+#
+# O wrangler.toml da raiz e do WORKER (Static Assets) e nao serve
+# para o Pages — por isso este arquivo separado.
+# ============================================================
+name = "auxilio-farmacia"
+compatibility_date = "2025-03-01"
+pages_build_output_dir = "./site"
